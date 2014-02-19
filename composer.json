@@ -1,0 +1,26 @@
+{
+    "name": "metaclass-nl/tresholds-governor",
+    "type": "library",
+    "description": "Tresholds Governor, aims to facilitate the protection of authentication against brute force and dictionary attacks",
+    "keywords": ["security", "brute force", "dictionary attack", "login", "authentication"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Henk Verhoeven",
+            "homepage": "http://www.metaclass.nl/"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+        "php": ">=5.3.3",
+     	"doctrine/dbal": "2.3.*",
+        "doctrine/doctrine-bundle": "1.2.*"
+    },
+    "require-dev": {
+    },
+    "suggest": {
+    },
+    "autoload": {
+        "psr-0": { "Metaclass\\TresholdsGovernor": "src" }
+    }
+}

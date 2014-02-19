@@ -1,0 +1,9 @@
+Issue #9 cross framework library refactoring
+- Moved TresholdsGovernor, RequestCountsRepository from AuthenticationGuardBundle
+- Corrrected namespaces and use statements 
+- Result\Rejection and subclasses added, corresponding to AuthenticationGuardBundle\Exception\AuthenticationFailedException
+- TresholdsGovernor::checkAuthentication now returns null or Result\Rejection
+- moved actual tests from AuthenticationGuardBundle to Tests\Service\TresholdsGovernorTest
+	(tests require injection of properly initialized TresholdsGovernor)
+- adapted TresholdsGovernorTest to TresholdsGovernor::checkAuthentication returning null or Result\Rejection
+- added documentation (2B completed)
