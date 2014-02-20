@@ -16,15 +16,15 @@ class TresholdsGovernor {
     protected $requestCountsRepo;
     public $dtString; //Y-m-d H:i:s
     
-    //config 
-    public $counterDurationInSeconds; //how long each counter counts
-    public $blockUsernamesFor; //like: '30 days'
-    public $limitPerUserName;
-    public $blockIpAddressesFor; //like: '15 minutes'
-    public $limitBasePerIpAddress; //limit may be higher, depending on successfull logins and requests (NYI)
-    public $allowReleasedUserOnAddressFor; //if empty feature is switched off
-    public $allowReleasedUserByCookieFor; //if empty feature is switched off
-    public $releaseUserOnLoginSuccess;
+    //config with defaults
+    public $counterDurationInSeconds = 180; //how long each counter counts
+    public $blockUsernamesFor = '25 minutes'; 
+    public $limitPerUserName = 3;
+    public $blockIpAddressesFor = '17 minutes'; 
+    public $limitBasePerIpAddress = 10; //limit may be higher, depending on successfull logins and requests (NYI)
+    public $allowReleasedUserOnAddressFor = '30 days'; //if empty feature is switched off
+    public $allowReleasedUserByCookieFor = ''; //if empty feature is switched off
+    public $releaseUserOnLoginSuccess = false;
     
     //variables
     protected $failureCountForIpAddress;

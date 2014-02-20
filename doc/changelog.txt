@@ -7,3 +7,5 @@ Issue #9 cross framework library refactoring
 	(tests require injection of properly initialized TresholdsGovernor)
 - adapted TresholdsGovernorTest to TresholdsGovernor::checkAuthentication returning null or Result\Rejection
 - added documentation (2B completed)
+----------------------------
+- TresholdsGovernor addes default settings
