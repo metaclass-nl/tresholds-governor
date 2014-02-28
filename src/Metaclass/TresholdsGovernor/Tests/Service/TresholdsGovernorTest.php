@@ -336,14 +336,17 @@ class TresholdsGovernorTest extends \PHPUnit_Framework_TestCase
         
     }
     
-    function testDeleteCounts1() 
+    function testDeleteData1() 
     {
-        $this->get('requestCountsRepo')->deleteCountsUntil(new \DateTime('1981-01-01'));
+        $this->get('requestCountsGateway')->deleteCountsUntil(new \DateTime('1981-01-01'));
+        $this->get('releasesGateway')->deleteReleasesUntil(new \DateTime('1981-01-01'));
+        
         $this->governer->initFor('192.168.255.255', 'testuser1', 'whattheheck', 'cookieToken1');
         $this->assertEquals(0, $this->get('failureCountForIpAddress'), 'failure count by ip address');
         $this->assertEquals(0, $this->get('failureCountForUserName'), 'failure count by username');
         $this->assertEquals(0, $this->get('failureCountForUserOnAddress'), 'failure count for username on address');
         $this->assertEquals(0, $this->get('failureCountForUserByCookie'), 'failure count for username by cookie');
+        
         $this->assertFalse($this->get('isUserReleasedOnAddress'), 'is user released on address');
         $this->assertFalse($this->get('isUserReleasedByCookie'), 'is user released by cookie');
     }
@@ -425,14 +428,19 @@ class TresholdsGovernorTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(array('%ipAddress%' => '192.168.255.255'), $result->parameters);
     }
         
-    function testDeleteCounts2() 
+    function testDeleteData2() 
     {
-        $this->get('requestCountsRepo')->deleteCountsUntil(new \DateTime('1981-01-01'));
+        $this->get('requestCountsGateway')->deleteCountsUntil(new \DateTime('1981-01-01'));
+        $this->get('releasesGateway')->deleteReleasesUntil(new \DateTime('1981-01-01'));
+        
         $this->governer->initFor('192.168.255.255', 'testuser1', 'whattheheck', 'cookieToken1');
         $this->assertEquals(0, $this->get('failureCountForIpAddress'), 'failure count by ip address');
         $this->assertEquals(0, $this->get('failureCountForUserName'), 'failure count by username');
         $this->assertEquals(0, $this->get('failureCountForUserOnAddress'), 'failure count for username on address');
         $this->assertEquals(0, $this->get('failureCountForUserByCookie'), 'failure count for username by cookie');
+        
+        $this->assertFalse($this->get('isUserReleasedOnAddress'), 'is user released on address');
+        $this->assertFalse($this->get('isUserReleasedByCookie'), 'is user released by cookie');
     }
 
     function assertNoException($value, $message = '') 

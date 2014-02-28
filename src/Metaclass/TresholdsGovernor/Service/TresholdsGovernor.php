@@ -7,13 +7,14 @@ use Metaclass\TresholdsGovernor\Result\UsernameBlocked;
 use Metaclass\TresholdsGovernor\Result\IpAddressBlocked;
 use Metaclass\TresholdsGovernor\Result\UsernameBlockedForCookie;
 use Metaclass\TresholdsGovernor\Result\UsernameBlockedForIpAddress;
-use Metaclass\TresholdsGovernor\Gateway\RequestCountsRepository;
+
+use Metaclass\TresholdsGovernor\Gateway\DbalGateway;
 
 class TresholdsGovernor {
 
     //dependencies
-    protected $dbalConnection;
-    protected $requestCountsRepo;
+    public $requestCountsGateway;
+    public $releasesGateway;
     public $dtString; //Y-m-d H:i:s
     
     //config with defaults
@@ -27,6 +28,9 @@ class TresholdsGovernor {
     public $releaseUserOnLoginSuccess = false;
     
     //variables
+    protected $ipAddress;
+    protected $username;
+    protected $cookieToken;
     protected $failureCountForIpAddress;
     protected $failureCountForUserName;
     protected $isUserReleasedOnAddress = false;
@@ -35,9 +39,9 @@ class TresholdsGovernor {
     protected $failureCountForUserByCookie;
 
             
-    public function __construct(Connection $dbalConnection, $requestCountsClass, $params) {
-        $this->dbalConnection = $dbalConnection;
-        $this->requestCountsRepo = new RequestCountsRepository($dbalConnection); 
+    public function __construct($params, DbalGateway $gateway=null) {
+        $this->requestCountsGateway = $gateway;
+        $this->releasesGateway =  $gateway;
         $this->dtString = date('Y-m-d H:i:s');
         $this->setPropertiesFromParams($params);
     }
@@ -66,21 +70,20 @@ class TresholdsGovernor {
         
         
         $timeLimit = new \DateTime("$this->dtString - $this->blockIpAddressesFor");
-        $this->failureCountForIpAddress  = $this->requestCountsRepo->countWhereSpecifiedAfter('loginsFailed', null, $ipAddress, null, $timeLimit, 'addresReleasedAt');
+        $this->failureCountForIpAddress  = $this->requestCountsGateway->countWhereSpecifiedAfter('loginsFailed', null, $ipAddress, null, $timeLimit, 'addresReleasedAt');
 
         $timeLimit = new \DateTime("$this->dtString - $this->blockUsernamesFor");
-        $this->failureCountForUserName = $this->requestCountsRepo->countWhereSpecifiedAfter('loginsFailed', $username,  null, null, $timeLimit, 'userReleasedAt');
-        $this->failureCountForUserOnAddress = $this->requestCountsRepo->countWhereSpecifiedAfter('loginsFailed', $username, $ipAddress, null, $timeLimit, 'userReleasedForAddressAndCookieAt');
-        $this->failureCountForUserByCookie = $this->requestCountsRepo->countWhereSpecifiedAfter('loginsFailed', $username, null, $cookieToken, $timeLimit, 'userReleasedForAddressAndCookieAt');
+        $this->failureCountForUserName = $this->requestCountsGateway->countWhereSpecifiedAfter('loginsFailed', $username,  null, null, $timeLimit, 'userReleasedAt');
+        $this->failureCountForUserOnAddress = $this->requestCountsGateway->countWhereSpecifiedAfter('loginsFailed', $username, $ipAddress, null, $timeLimit, 'userReleasedForAddressAndCookieAt');
+        $this->failureCountForUserByCookie = $this->requestCountsGateway->countWhereSpecifiedAfter('loginsFailed', $username, null, $cookieToken, $timeLimit, 'userReleasedForAddressAndCookieAt');
 
-        $relativeTo = new \DateTime("$this->dtString");
         if ($this->allowReleasedUserOnAddressFor) {
             $timeLimit = new \DateTime("$this->dtString - $this->allowReleasedUserOnAddressFor");
-            $this->isUserReleasedOnAddress = $this->requestCountsRepo->isUserReleasedOnAddressFrom($username, $ipAddress, $timeLimit);
+            $this->isUserReleasedOnAddress = $this->releasesGateway->isUserReleasedOnAddressFrom($username, $ipAddress, $timeLimit);
         }
         if ($this->allowReleasedUserByCookieFor) {
             $timeLimit = new \DateTime("$this->dtString - $this->allowReleasedUserByCookieFor");
-            $this->isUserReleasedByCookie = $this->requestCountsRepo->isUserReleasedByCookieFrom($username, $cookieToken, $timeLimit);
+            $this->isUserReleasedByCookie = $this->releasesGateway->isUserReleasedByCookieFrom($username, $cookieToken, $timeLimit);
         }
     }
 
@@ -144,11 +147,11 @@ class TresholdsGovernor {
         //? should we register (some) other failures in the session and release those here? 
         
         $dateTime = $this->getRequestCountsDt($this->dtString);
-        $id = $this->requestCountsRepo->getIdWhereDateAndUsernameAndIpAddressAndCookie($dateTime, $this->username, $this->ipAddress, $this->cookieToken);
+        $id = $this->requestCountsGateway->getIdWhereDateAndUsernameAndIpAddressAndCookie($dateTime, $this->username, $this->ipAddress, $this->cookieToken);
         if ($id) {
-            $this->requestCountsRepo->incrementColumnWhereId('loginsSucceeded', $id);
+            $this->requestCountsGateway->incrementColumnWhereId('loginsSucceeded', $id);
         } else {
-            $this->requestCountsRepo->createWith($dateTime, $this->ipAddress, $this->username, $this->cookieToken, true);
+            $this->requestCountsGateway->createWith($dateTime, $this->ipAddress, $this->username, $this->cookieToken, true);
         }
         if ($this->releaseUserOnLoginSuccess) {
             $this->releaseUserName();
@@ -160,11 +163,11 @@ class TresholdsGovernor {
     {
         //SBAL/Query/QueryBuilder::execute does not provide QueryCacheProfile to the connection, so the query will not be cached
         $dateTime = $this->getRequestCountsDt($this->dtString);
-        $id = $this->requestCountsRepo->getIdWhereDateAndUsernameAndIpAddressAndCookie($dateTime, $this->username, $this->ipAddress, $this->cookieToken);
+        $id = $this->requestCountsGateway->getIdWhereDateAndUsernameAndIpAddressAndCookie($dateTime, $this->username, $this->ipAddress, $this->cookieToken);
         if ($id) {
-            return $this->requestCountsRepo->incrementColumnWhereId('loginsFailed', $id); 
+            return $this->requestCountsGateway->incrementColumnWhereId('loginsFailed', $id); 
         }
-        $this->requestCountsRepo->createWith($dateTime, $this->ipAddress, $this->username, $this->cookieToken, false);
+        $this->requestCountsGateway->createWith($dateTime, $this->ipAddress, $this->username, $this->cookieToken, false);
     }
     
     /** only to be combined with new password */
@@ -172,7 +175,7 @@ class TresholdsGovernor {
     {
         $dateTime = new \DateTime($this->dtString);
         $timeLimit = new \DateTime("$this->dtString - $this->blockUsernamesFor");
-        $this->requestCountsRepo->updateColumnWhereColumnNullAfterSupplied(
+        $this->requestCountsGateway->updateColumnWhereColumnNullAfterSupplied(
             'userReleasedAt', $dateTime, $timeLimit, $this->username, null, null);
     }
     
@@ -180,17 +183,18 @@ class TresholdsGovernor {
     {
         $dateTime = new \DateTime($this->dtString);
         $timeLimit = new \DateTime("$this->dtString - $this->blockUsernamesFor");
-        $this->requestCountsRepo->updateColumnWhereColumnNullAfterSupplied(
+        $this->requestCountsGateway->updateColumnWhereColumnNullAfterSupplied(
             'userReleasedForAddressAndCookieAt', $dateTime, $timeLimit, $this->username, $this->ipAddress, null);
-        $this->requestCountsRepo->updateColumnWhereColumnNullAfterSupplied(
+        $this->requestCountsGateway->updateColumnWhereColumnNullAfterSupplied(
             'userReleasedForAddressAndCookieAt', $dateTime, $timeLimit, $this->username, null, $this->cookieToken);
+        $this->releasesGateway->insertOrUpdateRelease($dateTime, $this->username, $this->ipAddress, $this->cookieToken);
     }
 
     public function adminReleaseIpAddress()
     {
         $dateTime = new \DateTime($this->dtString);
         $timeLimit = new \DateTime("$this->dtString - $this->blockIpAddressesFor");
-        $this->requestCountsRepo->updateColumnWhereColumnNullAfterSupplied(
+        $this->requestCountsGateway->updateColumnWhereColumnNullAfterSupplied(
             'addresReleasedAt', $dateTime, $timeLimit, null, $this->ipAddress, null);
     }
 

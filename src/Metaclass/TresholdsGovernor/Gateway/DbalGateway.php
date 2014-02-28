@@ -1,7 +1,7 @@
 <?php 
 namespace Metaclass\TresholdsGovernor\Gateway;
 
-class RequestCountsRepository {
+class DbalGateway {
     
     protected $dbalConnection;
     
@@ -11,6 +11,13 @@ class RequestCountsRepository {
     public function __construct($dbalConnection) {
         $this->dbalConnection = $dbalConnection;
     }
+    
+    protected function getConnection() 
+    {
+        return $this->dbalConnection;
+    }
+
+//----------------------------- RequestCountsGatewayInterface ------------------------------------
     
     //WARNING: $counterColumn, $releaseColumn vurnerable for SQL injection!!
     public function countWhereSpecifiedAfter($counterColumn, $username, $ipAddress, $cookieToken, $dtLimit, $releaseColumn=null)
@@ -60,30 +67,6 @@ class RequestCountsRepository {
         }
     }
     
-    public function isUserReleasedOnAddressFrom($username, $ipAddess, $releaseLimit)
-    {
-        $sql = "SELECT id
-        FROM secu_requests r
-        WHERE userReleasedForAddressAndCookieAt >= ?
-                AND r.username = ? AND r.ipAddress = ? 
-        LIMIT 1";
-        
-        $conn = $this->getConnection();
-        return (boolean) $conn->fetchColumn($sql, array($releaseLimit->format('Y-m-d H:i:s'), $username, $ipAddess));
-    }
-    
-    public function isUserReleasedByCookieFrom($username, $cookieToken, $releaseLimit)
-    {
-        $sql = "SELECT id
-        FROM secu_requests r
-        WHERE userReleasedForAddressAndCookieAt >= ?
-                AND r.username = ? AND r.cookieToken = ? 
-        LIMIT 1";
-        
-        $conn = $this->getConnection();
-        return (boolean) $conn->fetchColumn($sql, array($releaseLimit->format('Y-m-d H:i:s'), $username, $cookieToken));
-    }
-
 // may not work without entity
 //    public function findByDateAndUsernameAndIpAddressAndCookie($dateTime, $ipAddress, $username, $cookieToken)
 //    {
@@ -118,14 +101,14 @@ class RequestCountsRepository {
             ;
     }
     
-    public function createWith($datetime, $ipAdrdess, $username, $cookieToken, $loginSucceeded)
+    public function createWith($datetime, $ipAddress, $username, $cookieToken, $loginSucceeded)
     {
         $conn = $this->getConnection();
         $counter = $loginSucceeded ? 'loginsSucceeded' : 'loginsFailed';
         $params = array(
             'dtFrom' => $datetime->format('Y-m-d H:i:s'),
             'username' => $username,
-            'ipAddress' => $ipAdrdess,
+            'ipAddress' => $ipAddress,
             'cookieToken' => $cookieToken,
             $counter => 1 );
         $columns = implode(', ', array_keys($params));
@@ -174,7 +157,8 @@ class RequestCountsRepository {
         $qb->execute();
     }
     
-    public function deleteCountsUntil(\DateTime $dtLimit) {
+    public function deleteCountsUntil(\DateTime $dtLimit) 
+    {
         if (!$dtLimit) {
             throw new \Exception('DateTime limit must be specified');
         }
@@ -186,9 +170,63 @@ class RequestCountsRepository {
         $qb->execute();
     }
     
-    protected function getConnection() 
+    //------------------------ ReleasesGatewayInterface ---------------------------------------------
+    public function insertOrUpdateRelease($datetime, $username, $ipAddress, $cookieToken)
     {
-        return $this->dbalConnection;
+        $params = array(
+            'releasedAt' => $datetime->format('Y-m-d H:i:s'),
+            'username' => $username,
+            'ipAddress' => $ipAddress,
+            'cookieToken' => $cookieToken );
+        $columns = implode(', ', array_keys($params));
+        $values = ':'. implode(', :', array_keys($params));
+        $columnExpressions = null;
+        forEach($params as $key => $value)
+        {
+            if (isSet($columnExpressions)) {
+                $columnExpressions .= ', ';
+            } 
+            $columnExpressions .= "$key = :upd_$key";
+            $params["upd_$key"] = $value;
+        }
+        $sql = "INSERT INTO secu_releases ($columns) VALUES ($values)
+                ON DUPLICATE KEY UPDATE $columnExpressions";
+        $this->getConnection()->executeUpdate($sql, $params);
+    }
+    
+    public function isUserReleasedOnAddressFrom($username, $ipAddess, $releaseLimit)
+    {
+        $sql = "SELECT r.releasedAt
+        FROM secu_releases r
+        WHERE r.releasedAt >= ?
+                AND r.username = ? AND r.ipAddress = ? ";
+    
+        $conn = $this->getConnection();
+        return (boolean) $conn->fetchColumn($sql, array($releaseLimit->format('Y-m-d H:i:s'), $username, $ipAddess));
+    }
+    
+    public function isUserReleasedByCookieFrom($username, $cookieToken, $releaseLimit)
+    {
+        $sql = "SELECT r.releasedAt
+        FROM secu_releases r
+        WHERE r.releasedAt >= ?
+                AND r.username = ? AND r.cookieToken = ? ";
+    
+        $conn = $this->getConnection();
+        return (boolean) $conn->fetchColumn($sql, array($releaseLimit->format('Y-m-d H:i:s'), $username, $cookieToken));
+    }
+    
+    public function deleteReleasesUntil(\DateTime $dtLimit) 
+    {
+        if (!$dtLimit) {
+            throw new \Exception('DateTime limit must be specified');
+        }
+        $conn = $this->getConnection();
+        $qb = $conn->createQueryBuilder();
+        $qb->delete('secu_releases')
+        ->where("releasedAt < :dtLimit")
+        ->setParameter('dtLimit', $dtLimit->format('Y-m-d H:i:s'));
+        $qb->execute();
     }
 }
 

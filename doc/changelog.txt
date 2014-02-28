@@ -8,4 +8,18 @@ Issue #9 cross framework library refactoring
 - adapted TresholdsGovernorTest to TresholdsGovernor::checkAuthentication returning null or Result\Rejection
 - added documentation (2B completed)
 ----------------------------
-- TresholdsGovernor addes default settings
+- TresholdsGovernor added default settings
+----------------------------------
+Issue #6 Add a separate last releases table so that RequestCounts records do not need to be kept for much longer treshold 'allowReleasedUserOnAddressFor' . 
+- RequestCountsRepository renamed to DbalGateway
+- TresholdsGovernor renamed property requestCountsRepo to requestCountsGateway
+- TresholdsGovernor 
+	::constructor DbalGateway (2 properties: requestCoutnsGateway, releasesGateway
+	::initFor releasesGateway aanroepen aanpassen
+	::releaseUserNameForIpAddressAndCookie now also inserts or updates releases
+- DbalGateway isUserReleased functions now query the releases table
+	::insertOrUpdateRelease, ::deleteReleasesUntil added
+- TresholdsGovernorTest testDelete functions now also delete releases
+ 
+Issue #9 cross framework library refactoring
+- doc/Installation.md added instructions for use without Symfony 2

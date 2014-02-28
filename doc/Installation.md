@@ -46,25 +46,53 @@ CREATE TABLE `secu_requests` (
   KEY `byAddress` (`ipAddress`,`dtFrom`,`addresReleasedAt`),
   KEY `byUsernameAndAddress` (`username`,`ipAddress`,`dtFrom`,`userReleasedForAddressAndAgentAt`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+CREATE TABLE `secu_releases` (
+  `username` varchar(25) COLLATE utf8_unicode_ci NULL,
+  `ipAddress` varchar(25) COLLATE utf8_unicode_ci NULL,
+  `cookieToken` varchar(40) COLLATE utf8_unicode_ci NULL,
+  `releasedAt` datetime DEFAULT NULL,
+  PRIMARY KEY (`ipAddress`, `username`, `cookieToken`)
+  ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+  
 	```
 	(you may use MyISAM, but processing multiple requests simultanously may result in some (non-fatal) counting race conditions during brute force attacks)
 	(you may use some other DBMS that is supported by Doctrine DBAL)
 
 4. From your own application's authentication code:
 
-<Under Construction>
+	```php
+use Metaclass\TresholdsGovernor\Service\TresholdsGovernor;
+use Metaclass\TresholdsGovernor\Gateway\DbalGateway;
 
+//initialize your Doctrine\DBAL\Connection
+$dbalGateway = new DbalGateway($dbalConnection);
+//parameters see step 5
+$governor = new TresholdsGovernor($parameters, $dbalGateway);
+//alternatively you may set separate gateways for RequestCounts to $governor->requestCountsGateway 
+//and for Releases to $governor->releasesGateway
+
+$governor->initFor($ipAddress, $username, $password, ''); //using the last parameter is not yet documented 
+$result = $governor->checkAuthentication();
+if ($result !== null) {
+	//$result holds an instance of a subclass of Metaclass\TresholdsGovernor\Result\Rejection
+	//block authentication. 
+} else {
+    //attempt to authenticate user
+} 
+	```
 
 5. You may also set the following configuraton parameters to the TresholdsGovernor (defaults shown):
 
-	```yml
-        counterDurationInSeconds:  300
-        blockUsernamesFor: "24 minutes"       # actual blocking for up to counterDurationInSeconds shorter!
-        limitPerUserName: 3
-        blockIpAddressesFor: "17 minutes"     # actual blocking for up to counterDurationInSeconds shorter!
-        limitBasePerIpAddress: 10
-        releaseUserOnLoginSuccess: false
-        allowReleasedUserOnAddressFor: "30 days" 
+	```php
+$parameters = array(
+    'counterDurationInSeconds' => 300,
+    'blockUsernamesFor' => "24 minutes",     // actual blocking for up to counterDurationInSeconds shorter!
+    'limitPerUserName' => 3,
+    'blockIpAddressesFor' => "17 minutes",   // actual blocking for up to counterDurationInSeconds shorter!
+    'limitBasePerIpAddress' => 10,
+    'releaseUserOnLoginSuccess' => false,
+    'allowReleasedUserOnAddressFor' => "30 days" );
 ```
 
   

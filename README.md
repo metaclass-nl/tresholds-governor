@@ -12,11 +12,11 @@ these authentication attacks. It is based on the "Tresholds Governer" described 
 FEATURES
 --------
 
-- Framework-independent component to be used from Framework-specific bundle/component or from applications that
+- Framework-independent library to be used from Framework-specific bundle/component or from applications that
   impelent their own authentication
 
-- Registers authentication counts and decedes to Blocks by both username and client ip address for 
-  which authentication failed  too often,
+- Registers authentication counts and decides to Block by username or client ip address for 
+  which authentication failed too often,
  
 - To hide weather an account actually exists for a username, any username that is tried too often may be blocked, 
   regardless of the existence and status of an account with that username,
