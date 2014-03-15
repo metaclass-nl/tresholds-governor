@@ -187,7 +187,10 @@ class TresholdsGovernor {
             'userReleasedForAddressAndCookieAt', $dateTime, $timeLimit, $this->username, $this->ipAddress, null);
         $this->requestCountsGateway->updateColumnWhereColumnNullAfterSupplied(
             'userReleasedForAddressAndCookieAt', $dateTime, $timeLimit, $this->username, null, $this->cookieToken);
-        $this->releasesGateway->insertOrUpdateRelease($dateTime, $this->username, $this->ipAddress, $this->cookieToken);
+
+        if ($this->allowReleasedUserByCookieFor || $this->allowReleasedUserOnAddressFor) {
+            $this->releasesGateway->insertOrUpdateRelease($dateTime, $this->username, $this->ipAddress, $this->cookieToken);
+        }
     }
 
     public function adminReleaseIpAddress()
@@ -198,6 +201,23 @@ class TresholdsGovernor {
             'addresReleasedAt', $dateTime, $timeLimit, null, $this->ipAddress, null);
     }
 
+    public function packData() 
+    {
+        $usernameLimit = new \DateTime("$this->dtString - $this->blockUsernamesFor");
+        $addressLimit = new \DateTime("$this->dtString - $this->blockIpAddressesFor");
+        $this->requestCountsGateway->deleteCountsUntil(min($usernameLimit, $addressLimit));
+        //idea pack RequestCounts to lower granularity for period between both limits
+        
+        $limit = new \DateTime($this->dtString);
+        if ($this->allowReleasedUserOnAddressFor) {
+            $limit = min($limit, new \DateTime("$this->dtString - $this->allowReleasedUserOnAddressFor"));
+        }
+        if ($this->allowReleasedUserByCookieFor) {
+            $limit = min($limit, new \DateTime("$this->dtString - $this->allowReleasedUserByCookieFor"));
+        }        
+        $this->releasesGateway->deleteReleasesUntil($limit);
+    }
+    
 }
 
 ?>

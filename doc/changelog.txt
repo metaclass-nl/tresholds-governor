@@ -23,3 +23,13 @@ Issue #6 Add a separate last releases table so that RequestCounts records do not
  
 Issue #9 cross framework library refactoring
 - doc/Installation.md added instructions for use without Symfony 2
+--------------------------------
+Issue #6 Add a function for clean-up of the RequestCounts 
+- TresholdsGovernor::packData added
+	::releaseUserNameForIpAddressAndCookie now only adds Releases if allowReleasedUserByCookieFor or allowReleasedUserOnAddressFor
+- TresholdsGovernorTest::testPackData added
+- Tests\Mock\MockGateway added
+- doc/Installation.md added index releasedAt to secu_releases table definition
+	added index byUsernameAndCookie to secu_requestcounts table definition
+---------------------------------------
+2DO: Issue #6 last releases DbalGateway cross database version

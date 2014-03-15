@@ -44,16 +44,18 @@ CREATE TABLE `secu_requests` (
   KEY `byDtFrom` (`dtFrom`),
   KEY `byUsername` (`username`,`dtFrom`,`userReleasedAt`),
   KEY `byAddress` (`ipAddress`,`dtFrom`,`addresReleasedAt`),
-  KEY `byUsernameAndAddress` (`username`,`ipAddress`,`dtFrom`,`userReleasedForAddressAndAgentAt`)
+  KEY `byUsernameAndAddress` (`username`,`ipAddress`,`dtFrom`,`userReleasedForAddressAndCookieAt`),
+  KEY `byUsernameAndCookie` (`username`,`cookieToken`,`dtFrom`,`userReleasedForAddressAndCookieAt`),
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
-CREATE TABLE `secu_releases` (
-  `username` varchar(25) COLLATE utf8_unicode_ci NULL,
-  `ipAddress` varchar(25) COLLATE utf8_unicode_ci NULL,
-  `cookieToken` varchar(40) COLLATE utf8_unicode_ci NULL,
+CREATE TABLE IF NOT EXISTS `secu_releases` (
+  `username` varchar(25) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
+  `ipAddress` varchar(25) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
+  `cookieToken` varchar(40) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
   `releasedAt` datetime DEFAULT NULL,
-  PRIMARY KEY (`ipAddress`, `username`, `cookieToken`)
-  ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+  PRIMARY KEY (`ipAddress`,`username`,`cookieToken`),
+  KEY `releasedAt` (`releasedAt`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
   
 	```
 	(you may use MyISAM, but processing multiple requests simultanously may result in some (non-fatal) counting race conditions during brute force attacks)

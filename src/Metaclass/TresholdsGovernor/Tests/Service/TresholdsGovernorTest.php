@@ -8,6 +8,8 @@ use Metaclass\TresholdsGovernor\Result\UsernameBlocked;
 use Metaclass\TresholdsGovernor\Result\UsernameBlockedForCookie;
 use Metaclass\TresholdsGovernor\Result\UsernameBlockedForIpAddress;
 
+use Metaclass\TresholdsGovernor\Tests\Mock\MockGateway;
+
 /** Requires injection of properly initialized TresholdsGovernor
  * */
 class TresholdsGovernorTest extends \PHPUnit_Framework_TestCase 
@@ -443,6 +445,52 @@ class TresholdsGovernorTest extends \PHPUnit_Framework_TestCase
         $this->assertFalse($this->get('isUserReleasedByCookie'), 'is user released by cookie');
     }
 
+    function testPackData()
+    {
+        $this->governer->requestCountsGateway = new MockGateway();
+        $this->governer->releasesGateway = new MockGateway();
+        $this->governer->blockUsernamesFor = '1 days';
+        $this->governer->blockIpAddressesFor = '3 days'; 
+//        $this->governer->allowReleasedUserOnAddressFor = '30 days';
+//        $this->governer->allowReleasedUserByCookieFor =  '10 days';
+        
+        $this->governer->packData();
+        $this->assertNull($this->governer->requestCountsGateway->deleteReleasesLimit, "releasesLimit on requestCountsGateway");
+        $this->assertNull($this->governer->releasesGateway->deleteCountsLimit, "deleteCountsLimit on releasesGateway");
+        //3 days befor 1980-07-01 00:00:00
+        $this->assertEquals(new \DateTime('1980-06-28 00:00:00'), $this->governer->requestCountsGateway->deleteCountsLimit, "deleteCountsLimit on requestCountsGateway");
+        //30 days before 1980-07-01 00:00:00
+        $this->assertEquals(new \DateTime('1980-06-01 00:00:00'), $this->governer->releasesGateway->deleteReleasesLimit, "deleteReleasesLimit on releasesGateway");
+        
+        $this->governer->blockUsernamesFor = '5 days';
+        $this->governer->blockIpAddressesFor = '3 days';
+        $this->governer->allowReleasedUserOnAddressFor = '3 days';
+        $this->governer->allowReleasedUserByCookieFor =  '10 days';
+        $this->governer->packData();
+        //5 days befor 1980-07-01 00:00:00
+        $this->assertEquals(new \DateTime('1980-06-26 00:00:00'), $this->governer->requestCountsGateway->deleteCountsLimit, "deleteCountsLimit on requestCountsGateway");
+        //10 days before 1980-07-01 00:00:00
+        $this->assertEquals(new \DateTime('1980-06-21 00:00:00'), $this->governer->releasesGateway->deleteReleasesLimit, "deleteReleasesLimit on releasesGateway");
+        
+        $this->governer->allowReleasedUserOnAddressFor = '';
+        $this->governer->allowReleasedUserByCookieFor =  '11 days';
+        $this->governer->packData();
+        //10 days before 1980-07-01 00:00:00
+        $this->assertEquals(new \DateTime('1980-06-20 00:00:00'), $this->governer->releasesGateway->deleteReleasesLimit, "deleteReleasesLimit on releasesGateway");
+
+        $this->governer->allowReleasedUserOnAddressFor = '2 days';
+        $this->governer->allowReleasedUserByCookieFor =  '';
+        $this->governer->packData();
+        //2 days before 1980-07-01 00:00:00
+        $this->assertEquals(new \DateTime('1980-06-29 00:00:00'), $this->governer->releasesGateway->deleteReleasesLimit, "deleteReleasesLimit on releasesGateway");
+        
+        $this->governer->allowReleasedUserOnAddressFor = '';
+        $this->governer->allowReleasedUserByCookieFor =  '';
+        $this->governer->packData();
+        //1980-07-01 00:00:00
+        $this->assertEquals(new \DateTime('1980-07-01 00:00:00'), $this->governer->releasesGateway->deleteReleasesLimit, "deleteReleasesLimit on releasesGateway");
+    }
+    
     function assertNoException($value, $message = '') 
     {
         //assertNotNull crashes on exception.
@@ -459,7 +507,6 @@ class TresholdsGovernorTest extends \PHPUnit_Framework_TestCase
             }
             throw new \PHPUnit_Framework_ExpectationFailedException($failureDescription, null);
         }
-    }
-    
+    }   
 }
 ?>
