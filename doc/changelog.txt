@@ -37,4 +37,12 @@ Issue #6 last releases DbalGateway cross database version
  - DabalGateway added ::insertRelease, ::updateRelease, ::getReleasesIdWhereDateAndUsernameAndIpAddressAndCookie
 	::insertOrUpdateRelease now calls getReleaesId, insert or update functions
  	::isUserReleasedOnAddressFrom, ::isUserReleasedByCookieFrom now select max(releasedAt) so that race conditions will not affect the outcomes
- 
+-------------------------------------------
+Issue #6 Add a separate last releases table: rename DbalGateway RequestCounts methods
+- DbalGateway::insertOrUpdateCounts added
+	::createWith renamed to ::createRequestCountsWith now protected, expects $counter column name instead of $loginSucceeded boolean
+	::incrementColumnWhereId renamed to ::incrementCountWhereId, now protected
+	::getIdWhereDateAndUsernameAndIpAddressAndCookie renamed to ::getCountsIdWhereDateAndUsernameAndIpAddressAndCookie
+		now protected
+	::updateColumnWhereColumnNullAfterSupplied renamed to ::updateCountsColumnWhereColumnNullAfterSupplied
+- ::registerAuthenticationSuccess, ::registerAuthenticationFailure factored out ::insertOrUpdateRequestCounts

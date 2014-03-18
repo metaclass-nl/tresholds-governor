@@ -76,7 +76,19 @@ class DbalGateway {
 //        return $qb->getQuery()->getOneOrNullResult();
 //    }
     
-    public function getIdWhereDateAndUsernameAndIpAddressAndCookie($dateTime, $username, $ipAddress, $cookieToken) {
+    public function insertOrUpdateCounts($dateTime, $username, $ipAddress, $cookieToken, $loginSucceeded)
+    {
+        $counter = $loginSucceeded ? 'loginsSucceeded' : 'loginsFailed';
+        $id = $this->getCountsIdWhereDateAndUsernameAndIpAddressAndCookie($dateTime, $username, $ipAddress, $cookieToken);
+        if ($id) {
+            $this->incrementCountWhereId($counter, $id);
+        } else {
+            $this->createRequestCountsWith($dateTime, $ipAddress, $username, $cookieToken, $counter);
+        }
+        
+    }
+    
+    protected function getCountsIdWhereDateAndUsernameAndIpAddressAndCookie($dateTime, $username, $ipAddress, $cookieToken) {
         $conn = $this->getConnection();
         $qb = $conn->createQueryBuilder();
         $qb->select('r.id')
@@ -85,6 +97,34 @@ class DbalGateway {
         return $qb->execute()->fetchColumn();
     }
     
+    //WARNING: $columnToUpdate vurnerable for SQL injection!!
+    protected function incrementCountWhereId($columnToUpdate, $id)
+    {
+        $conn = $this->getConnection();
+        $qb = $conn->createQueryBuilder();
+        $qb->update('secu_requests', 'r')
+            ->set($columnToUpdate, "$columnToUpdate + 1")
+            ->where("id = :id")
+            ->setParameter('id', $id)
+            ->execute();
+    }
+    
+    //WARNING: $counter vurnerable for SQL injection
+    protected function createRequestCountsWith($datetime, $ipAddress, $username, $cookieToken, $counter)
+    {
+        $conn = $this->getConnection();
+        $params = array(
+            'dtFrom' => $datetime->format('Y-m-d H:i:s'),
+            'username' => $username,
+            'ipAddress' => $ipAddress,
+            'cookieToken' => $cookieToken,
+            $counter => 1 );
+        $columns = implode(', ', array_keys($params));
+        $values = ':'. implode(', :', array_keys($params));
+        $sql = "INSERT INTO secu_requests ($columns) VALUES ($values)";
+        $conn->executeUpdate($sql, $params);
+    }
+
     //WARNING: $releaseColumn vurnerable for SQL injection!!
     protected function qbWhereDateAndUsernameAndIpAddressAndCookie($qb, $dateTime, $username, $ipAddress, $cookieToken) {
         $qb->where('r.username = :username')
@@ -101,36 +141,8 @@ class DbalGateway {
             ;
     }
     
-    public function createWith($datetime, $ipAddress, $username, $cookieToken, $loginSucceeded)
-    {
-        $conn = $this->getConnection();
-        $counter = $loginSucceeded ? 'loginsSucceeded' : 'loginsFailed';
-        $params = array(
-            'dtFrom' => $datetime->format('Y-m-d H:i:s'),
-            'username' => $username,
-            'ipAddress' => $ipAddress,
-            'cookieToken' => $cookieToken,
-            $counter => 1 );
-        $columns = implode(', ', array_keys($params));
-        $values = ':'. implode(', :', array_keys($params));
-        $sql = "INSERT INTO secu_requests ($columns) VALUES ($values)";
-        $conn->executeUpdate($sql, $params);
-    }
-    
     //WARNING: $columnToUpdate vurnerable for SQL injection!!
-    public function incrementColumnWhereId($columnToUpdate, $id)
-    {
-        $conn = $this->getConnection();
-        $qb = $conn->createQueryBuilder();
-        $qb->update('secu_requests', 'r')
-            ->set($columnToUpdate, "$columnToUpdate + 1")
-            ->where("id = :id")
-            ->setParameter('id', $id)
-            ->execute();
-    }
-    
-    //WARNING: $columnToUpdate vurnerable for SQL injection!!
-    public function updateColumnWhereColumnNullAfterSupplied($columnToUpdate, $value, $dtLimit, $username, $ipAddress, $cookieToken) {
+    public function updateCountsColumnWhereColumnNullAfterSupplied($columnToUpdate, $value, $dtLimit, $username, $ipAddress, $cookieToken) {
         if ($username === null && $ipAddress == null) {
             throw new BadFunctionCallException ('At least one of username and ip address must be supplied');
         }

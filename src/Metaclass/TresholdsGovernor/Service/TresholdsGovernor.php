@@ -147,12 +147,8 @@ class TresholdsGovernor {
         //? should we register (some) other failures in the session and release those here? 
         
         $dateTime = $this->getRequestCountsDt($this->dtString);
-        $id = $this->requestCountsGateway->getIdWhereDateAndUsernameAndIpAddressAndCookie($dateTime, $this->username, $this->ipAddress, $this->cookieToken);
-        if ($id) {
-            $this->requestCountsGateway->incrementColumnWhereId('loginsSucceeded', $id);
-        } else {
-            $this->requestCountsGateway->createWith($dateTime, $this->ipAddress, $this->username, $this->cookieToken, true);
-        }
+        $this->requestCountsGateway->insertOrUpdateCounts($dateTime, $this->username, $this->ipAddress, $this->cookieToken, true);
+
         if ($this->releaseUserOnLoginSuccess) {
             $this->releaseUserName();
         } 
@@ -163,11 +159,7 @@ class TresholdsGovernor {
     {
         //SBAL/Query/QueryBuilder::execute does not provide QueryCacheProfile to the connection, so the query will not be cached
         $dateTime = $this->getRequestCountsDt($this->dtString);
-        $id = $this->requestCountsGateway->getIdWhereDateAndUsernameAndIpAddressAndCookie($dateTime, $this->username, $this->ipAddress, $this->cookieToken);
-        if ($id) {
-            return $this->requestCountsGateway->incrementColumnWhereId('loginsFailed', $id); 
-        }
-        $this->requestCountsGateway->createWith($dateTime, $this->ipAddress, $this->username, $this->cookieToken, false);
+        $this->requestCountsGateway->insertOrUpdateCounts($dateTime, $this->username, $this->ipAddress, $this->cookieToken, false);
     }
     
     /** only to be combined with new password */
@@ -175,7 +167,7 @@ class TresholdsGovernor {
     {
         $dateTime = new \DateTime($this->dtString);
         $timeLimit = new \DateTime("$this->dtString - $this->blockUsernamesFor");
-        $this->requestCountsGateway->updateColumnWhereColumnNullAfterSupplied(
+        $this->requestCountsGateway->updateCountsColumnWhereColumnNullAfterSupplied(
             'userReleasedAt', $dateTime, $timeLimit, $this->username, null, null);
     }
     
@@ -183,9 +175,9 @@ class TresholdsGovernor {
     {
         $dateTime = new \DateTime($this->dtString);
         $timeLimit = new \DateTime("$this->dtString - $this->blockUsernamesFor");
-        $this->requestCountsGateway->updateColumnWhereColumnNullAfterSupplied(
+        $this->requestCountsGateway->updateCountsColumnWhereColumnNullAfterSupplied(
             'userReleasedForAddressAndCookieAt', $dateTime, $timeLimit, $this->username, $this->ipAddress, null);
-        $this->requestCountsGateway->updateColumnWhereColumnNullAfterSupplied(
+        $this->requestCountsGateway->updateCountsColumnWhereColumnNullAfterSupplied(
             'userReleasedForAddressAndCookieAt', $dateTime, $timeLimit, $this->username, null, $this->cookieToken);
 
         if ($this->allowReleasedUserByCookieFor || $this->allowReleasedUserOnAddressFor) {
@@ -197,7 +189,7 @@ class TresholdsGovernor {
     {
         $dateTime = new \DateTime($this->dtString);
         $timeLimit = new \DateTime("$this->dtString - $this->blockIpAddressesFor");
-        $this->requestCountsGateway->updateColumnWhereColumnNullAfterSupplied(
+        $this->requestCountsGateway->updateCountsColumnWhereColumnNullAfterSupplied(
             'addresReleasedAt', $dateTime, $timeLimit, null, $this->ipAddress, null);
     }
 
