@@ -48,17 +48,20 @@ CREATE TABLE `secu_requests` (
   KEY `byUsernameAndCookie` (`username`,`cookieToken`,`dtFrom`,`userReleasedForAddressAndCookieAt`),
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `secu_releases` (
+CREATE TABLE `secu_releases` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `username` varchar(25) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
   `ipAddress` varchar(25) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
   `cookieToken` varchar(40) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
   `releasedAt` datetime DEFAULT NULL,
-  PRIMARY KEY (`ipAddress`,`username`,`cookieToken`),
-  KEY `releasedAt` (`releasedAt`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+  PRIMARY KEY (`id`),
+  KEY `releasedAt` (`releasedAt`),
+  KEY `extkey` (`username`,`ipAddress`,`cookieToken`),
+  KEY `byCookie` (`username`,`cookieToken`)
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
   
 	```
-	(you may use MyISAM, but processing multiple requests simultanously may result in some (non-fatal) counting race conditions during brute force attacks)
+	(you may use MyISAM)
 	(you may use some other DBMS that is supported by Doctrine DBAL)
 
 4. From your own application's authentication code:

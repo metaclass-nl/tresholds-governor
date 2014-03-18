@@ -173,6 +173,27 @@ class DbalGateway {
     //------------------------ ReleasesGatewayInterface ---------------------------------------------
     public function insertOrUpdateRelease($datetime, $username, $ipAddress, $cookieToken)
     {
+        $id = $this->getReleasesIdWhereDateAndUsernameAndIpAddressAndCookie($username, $ipAddress, $cookieToken);
+        if ($id) {
+            $this->updateRelease($datetime, $id);
+        } else {
+            $this->insertRelease($datetime, $username, $ipAddress, $cookieToken);
+        }
+    }
+    
+    protected function getReleasesIdWhereDateAndUsernameAndIpAddressAndCookie($username, $ipAddress, $cookieToken) 
+    {
+        $params = array(
+                'username' => $username,
+                'ipAddress' => $ipAddress,
+                'cookieToken' => $cookieToken );
+        $sql = "SELECT id from secu_releases WHERE username = :username AND ipAddress = :ipAddress AND cookieToken = :cookieToken ORDER BY id";
+        $found = $this->getConnection()->fetchColumn($sql, $params);
+        return isSet($found[0]) ? $found[0] : null; 
+    }
+    
+    protected function insertRelease($datetime, $username, $ipAddress, $cookieToken)
+    {
         $params = array(
             'releasedAt' => $datetime->format('Y-m-d H:i:s'),
             'username' => $username,
@@ -180,23 +201,22 @@ class DbalGateway {
             'cookieToken' => $cookieToken );
         $columns = implode(', ', array_keys($params));
         $values = ':'. implode(', :', array_keys($params));
-        $columnExpressions = null;
-        forEach($params as $key => $value)
-        {
-            if (isSet($columnExpressions)) {
-                $columnExpressions .= ', ';
-            } 
-            $columnExpressions .= "$key = :upd_$key";
-            $params["upd_$key"] = $value;
-        }
-        $sql = "INSERT INTO secu_releases ($columns) VALUES ($values)
-                ON DUPLICATE KEY UPDATE $columnExpressions";
+        $sql = "INSERT INTO secu_releases ($columns) VALUES ($values)";
+        $this->getConnection()->executeUpdate($sql, $params);
+    }
+    
+    protected function updateRelease($datetime, $id)
+    {
+        $params = array(
+            'releasedAt' => $datetime->format('Y-m-d H:i:s'),
+            'id' => $id );
+        $sql = "UPDATE secu_releases SET releasedAt = :releasedAt WHERE id = :id";
         $this->getConnection()->executeUpdate($sql, $params);
     }
     
     public function isUserReleasedOnAddressFrom($username, $ipAddess, $releaseLimit)
     {
-        $sql = "SELECT r.releasedAt
+        $sql = "SELECT max(r.releasedAt)
         FROM secu_releases r
         WHERE r.releasedAt >= ?
                 AND r.username = ? AND r.ipAddress = ? ";
@@ -207,7 +227,7 @@ class DbalGateway {
     
     public function isUserReleasedByCookieFrom($username, $cookieToken, $releaseLimit)
     {
-        $sql = "SELECT r.releasedAt
+        $sql = "SELECT max(r.releasedAt)
         FROM secu_releases r
         WHERE r.releasedAt >= ?
                 AND r.username = ? AND r.cookieToken = ? ";

@@ -32,4 +32,9 @@ Issue #6 Add a function for clean-up of the RequestCounts
 - doc/Installation.md added index releasedAt to secu_releases table definition
 	added index byUsernameAndCookie to secu_requestcounts table definition
 ---------------------------------------
-2DO: Issue #6 last releases DbalGateway cross database version
+Issue #6 last releases DbalGateway cross database version
+- doc/Installation.md Added autoincrement id to releases table, added index byCookie
+ - DabalGateway added ::insertRelease, ::updateRelease, ::getReleasesIdWhereDateAndUsernameAndIpAddressAndCookie
+	::insertOrUpdateRelease now calls getReleaesId, insert or update functions
+ 	::isUserReleasedOnAddressFrom, ::isUserReleasedByCookieFrom now select max(releasedAt) so that race conditions will not affect the outcomes
+ 
