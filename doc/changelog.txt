@@ -46,3 +46,15 @@ Issue #6 Add a separate last releases table: rename DbalGateway RequestCounts me
 		now protected
 	::updateColumnWhereColumnNullAfterSupplied renamed to ::updateCountsColumnWhereColumnNullAfterSupplied
 - ::registerAuthenticationSuccess, ::registerAuthenticationFailure factored out ::insertOrUpdateRequestCounts
+----------------------------------------------
+Issue #7  facilitate custom NoSQL storage 
+- Metaclass\TresholdsGovernor\Manager\RdbManager added 
+- ReleasesManagerInterface added
+- RequestCountsManagerInterface added
+- TresholdsGoverner from all functions factored out Manager\RdbManager functions 
+	>>requestCountsGateway renamed to requestCountsManager
+	>>releasesGateway renamed to releasesManager
+	::__construct now expects a dataManager instead of a DbalGateway
+- DbalGateway::insertOrUpdateCounts renamed to ::insertOrIncrementCount
+- TresholdsGovernorTest::testDeleteData1, ::testDeleteData2 now gets >>requestCountsManager, >>releasesManager
+	::testPackData now uses RdbManager, >>requestCountsManager, >>releasesManager

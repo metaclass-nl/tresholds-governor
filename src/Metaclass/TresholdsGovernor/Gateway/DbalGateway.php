@@ -76,7 +76,7 @@ class DbalGateway {
 //        return $qb->getQuery()->getOneOrNullResult();
 //    }
     
-    public function insertOrUpdateCounts($dateTime, $username, $ipAddress, $cookieToken, $loginSucceeded)
+    public function insertOrIncrementCount($dateTime, $username, $ipAddress, $cookieToken, $loginSucceeded)
     {
         $counter = $loginSucceeded ? 'loginsSucceeded' : 'loginsFailed';
         $id = $this->getCountsIdWhereDateAndUsernameAndIpAddressAndCookie($dateTime, $username, $ipAddress, $cookieToken);
@@ -256,8 +256,8 @@ class DbalGateway {
         $conn = $this->getConnection();
         $qb = $conn->createQueryBuilder();
         $qb->delete('secu_releases')
-        ->where("releasedAt < :dtLimit")
-        ->setParameter('dtLimit', $dtLimit->format('Y-m-d H:i:s'));
+            ->where("releasedAt < :dtLimit")
+            ->setParameter('dtLimit', $dtLimit->format('Y-m-d H:i:s'));
         $qb->execute();
     }
 }
