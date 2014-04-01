@@ -3,6 +3,9 @@ namespace Metaclass\TresholdsGovernor\Gateway;
 
 class DbalGateway {
     
+    /**
+     * @var Doctrine\DBAL\Connection $dbalConnection The database connection to use.
+     */
     protected $dbalConnection;
     
     /**
@@ -12,6 +15,9 @@ class DbalGateway {
         $this->dbalConnection = $dbalConnection;
     }
     
+    /**
+     * @return Doctrine\DBAL\Connection
+     */
     protected function getConnection() 
     {
         return $this->dbalConnection;
@@ -19,8 +25,22 @@ class DbalGateway {
 
 //----------------------------- RequestCountsGatewayInterface ------------------------------------
     
-    //WARNING: $counterColumn, $releaseColumn vurnerable for SQL injection!!
-    public function countWhereSpecifiedAfter($counterColumn, $username, $ipAddress, $cookieToken, $dtLimit, $releaseColumn=null)
+    /**
+     * @return int Total of $counterColumn counted for $ipAddress with dtFrom after $timeLimit
+     * AND as far as specified username, ipAddress and cookieToken equal to specified.
+     * AND $releaseColumn is null if specified
+     * 
+     * WARNING: Supply literal string or well-validated vale for $counterColumn and $releaseColumn to prevent SQL injection!
+     * 
+     * @param string $counterColumn
+     * @param string $username
+     * @param string $ipAddress
+     * @param string $cookieToken
+     * @param \DateTime $dtLimit
+     * @param string $releaseColumn
+     * @throws BadFunctionCallException
+     */
+    public function countWhereSpecifiedAfter($counterColumn, $username, $ipAddress, $cookieToken, \DateTime $dtLimit, $releaseColumn=null)
     {
         if ($username === null && $ipAddress == null && $cookieToken == null) {
             throw new BadFunctionCallException ('At least one of username, ipAddress, cookieToken must be supplied');
@@ -48,35 +68,21 @@ class DbalGateway {
         return (int) $qb->execute()->fetchColumn();
     }
     
-    //currently not used
-    public function getDateLastLoginSuccessAfter($dtLimit, $username, $ipAddress=null, $cookieToken=null) {
-        $qb = $this->getConnection()->createQueryBuilder();
-        $qb->select("r.date")
-            ->from('secu_requests', 'r')
-            ->where("r.dtFrom > :dtLimit")
-            ->andWhere("r.username = :username")
-            ->setParameter('dtLimit', $dtLimit->format('Y-m-d H:i:s'))
-            ->setParameter('username', $username);
-        if ($ipAddress !== null) {
-            $qb->andWhere("r.ipAddress = :ipAddress")
-                ->setParameter('ipAddress', $ipAddress);
-        }
-        if (cookieToken !== null) {
-               $qb->andWhere("(r.cookieToken = :token)")
-                  ->setParameter('token', $cookieToken);
-        }
-    }
-    
-// may not work without entity
-//    public function findByDateAndUsernameAndIpAddressAndCookie($dateTime, $ipAddress, $username, $cookieToken)
-//    {
-//        $qb = $this->createQueryBuilder('r');
-//        $this->qbWhereDateAndUsernameAndIpAddressAndCookie($qb, $dateTime, $username, $ipAddress, $cookieToken);
-//
-//        return $qb->getQuery()->getOneOrNullResult();
-//    }
-    
-    public function insertOrIncrementCount($dateTime, $username, $ipAddress, $cookieToken, $loginSucceeded)
+    /**
+     * Insert 1 or increment the counter column corresonding to $loginSucceeded 
+     * AND all corrsponding column values equal to the other parameters.
+     * 
+     * Due to race conditions multiple records of RequestCounts may exist for the same combination of 
+     * $dateTime, $username, $ipAddress and $cookieToken. This is no problem as their counters will all
+     * be summarized by ::countWhereSpecifiedAfter and they will all be released by ::updateCountsColumnWhereColumnNullAfterSupplied
+     *    
+     * @param \DateTime $dateTime for dtFrom
+     * @param string $username
+     * @param string $ipAddress
+     * @param string $cookieToken
+     * @param boolean $loginSucceeded wheather the login succeede (otherwise it failed)
+     */
+    public function insertOrIncrementCount(\DateTime $dateTime, $username, $ipAddress, $cookieToken, $loginSucceeded)
     {
         $counter = $loginSucceeded ? 'loginsSucceeded' : 'loginsFailed';
         $id = $this->getCountsIdWhereDateAndUsernameAndIpAddressAndCookie($dateTime, $username, $ipAddress, $cookieToken);
@@ -88,7 +94,15 @@ class DbalGateway {
         
     }
     
-    protected function getCountsIdWhereDateAndUsernameAndIpAddressAndCookie($dateTime, $username, $ipAddress, $cookieToken) {
+    /**
+     * @return int the id of a RequestCount with all corrsponding column values equal to the parameters 
+     * AND all release columns null.
+     * @param \DateTime $dateTime for dtFrom
+     * @param string $username
+     * @param string $ipAddress
+     * @param string $cookieToken
+     */
+    protected function getCountsIdWhereDateAndUsernameAndIpAddressAndCookie(\DateTime $dateTime, $username, $ipAddress, $cookieToken) {
         $conn = $this->getConnection();
         $qb = $conn->createQueryBuilder();
         $qb->select('r.id')
@@ -97,7 +111,13 @@ class DbalGateway {
         return $qb->execute()->fetchColumn();
     }
     
-    //WARNING: $columnToUpdate vurnerable for SQL injection!!
+    /** Increment RequestCounts $columnToUpdate where id = $id 
+     * 
+     * WARNING: Supply literal string or well-validated vale for $columnToUpdate to prevent SQL injection!
+     * 
+     * @param string $columnToUpdate
+     * @param int $id
+     */
     protected function incrementCountWhereId($columnToUpdate, $id)
     {
         $conn = $this->getConnection();
@@ -109,7 +129,18 @@ class DbalGateway {
             ->execute();
     }
     
-    //WARNING: $counter vurnerable for SQL injection
+    /**
+     * Insert RequestCounts with 1 for the $counter column  
+     * and all corrsponding column values set to the other parameter values
+     * 
+     * WARNING: Supply literal string or well-validated vale for $counter to prevent SQL injection!
+     * 
+     * @param \DateTime $dateTime for dtFrom
+     * @param string $username
+     * @param string $ipAddress
+     * @param string $cookieToken
+     * @param string $counter name of the counter column
+     */
     protected function createRequestCountsWith($datetime, $ipAddress, $username, $cookieToken, $counter)
     {
         $conn = $this->getConnection();
@@ -125,7 +156,15 @@ class DbalGateway {
         $conn->executeUpdate($sql, $params);
     }
 
-    //WARNING: $releaseColumn vurnerable for SQL injection!!
+    /**
+     * Add WHERE clause and parameters to $qb for dtFrom = $dateTime AND all release columns are NULL 
+     * AND username = $username AND ipAddress = $ipAddress AND cookieToken = $cookieToken
+     * @param QueryBuilder $qb
+     * @param \DateTime $dateTime
+     * @param string $username
+     * @param string $ipAddress
+     * @param string $cookieToken
+     */
     protected function qbWhereDateAndUsernameAndIpAddressAndCookie($qb, $dateTime, $username, $ipAddress, $cookieToken) {
         $qb->where('r.username = :username')
             ->andWhere('r.ipAddress = :ipAddress')
@@ -141,8 +180,21 @@ class DbalGateway {
             ;
     }
     
-    //WARNING: $columnToUpdate vurnerable for SQL injection!!
-    public function updateCountsColumnWhereColumnNullAfterSupplied($columnToUpdate, $value, $dtLimit, $username, $ipAddress, $cookieToken) {
+    /**
+     * Set Requestcounts $columnToUpdate to $value where $columnToUpdate is null AND dtFrom > $dtLimit
+     * AND as far as specified username, ipAddress and cookieToken equal to specified.
+
+     * WARNING: Supply literal string or well-validated vale for $columnToUpdate to prevent SQL injection!
+     * 
+     * @param string $columnToUpdate
+     * @param \DateTime $value date and time of the release
+     * @param \DateTime $dtLimit
+     * @param string $username
+     * @param string $ipAddress
+     * @param string $cookieToken
+     * @throws BadFunctionCallException
+     */
+    public function updateCountsColumnWhereColumnNullAfterSupplied($columnToUpdate, \DateTime $value, \DateTime $dtLimit, $username, $ipAddress, $cookieToken) {
         if ($username === null && $ipAddress == null) {
             throw new BadFunctionCallException ('At least one of username and ip address must be supplied');
         }
@@ -169,6 +221,10 @@ class DbalGateway {
         $qb->execute();
     }
     
+    /**
+     * Delete all RequestCounts with dtFrom before $dtLimit
+     * @param \DateTime $dtLimit 
+     */
     public function deleteCountsUntil(\DateTime $dtLimit) 
     {
         if (!$dtLimit) {
@@ -182,8 +238,17 @@ class DbalGateway {
         $qb->execute();
     }
     
-    //------------------------ ReleasesGatewayInterface ---------------------------------------------
-    public function insertOrUpdateRelease($datetime, $username, $ipAddress, $cookieToken)
+//------------------------ ReleasesGatewayInterface ---------------------------------------------
+
+    /** 
+     * Register the release at $dateTime of $username for both $ipAddress and $cookieToken.
+     * 
+     * @param DateTime $dateTime of the release
+     * @param string $username
+     * @param string $ipAddress
+     * @param string $cookieToken
+     */
+    public function insertOrUpdateRelease(\DateTime $datetime, $username, $ipAddress, $cookieToken)
     {
         $id = $this->getReleasesIdWhereDateAndUsernameAndIpAddressAndCookie($username, $ipAddress, $cookieToken);
         if ($id) {
@@ -193,17 +258,39 @@ class DbalGateway {
         }
     }
     
+    /** 
+     * Get the id of the release of $username for both $ipAddress and $cookieToken.
+     * The same user may have been released for several combinations of ip address and cookieToken
+     * resulting in ever so many records. 
+     * 
+     * Due to race conditions multiple records of releases may exist for the same combination of 
+     * $username, $ipAddress and $cookieToken. To compensate the last (highest) release date will be
+     * used. Therefore it is irrelevant the release date which release of these is updated.   
+     * 
+     * @param string $username
+     * @param string $ipAddress
+     * @param string $cookieToken
+     * @return int id of the Release
+     */
     protected function getReleasesIdWhereDateAndUsernameAndIpAddressAndCookie($username, $ipAddress, $cookieToken) 
     {
         $params = array(
                 'username' => $username,
                 'ipAddress' => $ipAddress,
                 'cookieToken' => $cookieToken );
-        $sql = "SELECT id from secu_releases WHERE username = :username AND ipAddress = :ipAddress AND cookieToken = :cookieToken ORDER BY id";
+        $sql = "SELECT id from secu_releases WHERE username = :username AND ipAddress = :ipAddress AND cookieToken = :cookieToken";
         $found = $this->getConnection()->fetchColumn($sql, $params);
         return isSet($found[0]) ? $found[0] : null; 
     }
     
+    /** 
+     * Insert a new release at $dateTime of $username for both $ipAddress and $cookieToken.
+     * 
+     * @param DateTime $dateTime of the release
+     * @param string $username
+     * @param string $ipAddress
+     * @param string $cookieToken
+     */
     protected function insertRelease($datetime, $username, $ipAddress, $cookieToken)
     {
         $params = array(
@@ -217,6 +304,12 @@ class DbalGateway {
         $this->getConnection()->executeUpdate($sql, $params);
     }
     
+    /** 
+     * Update the $dateTime of the release with $id
+     * 
+     * @param DateTime $dateTime to set
+     * @param int $id to select the release by
+     */
     protected function updateRelease($datetime, $id)
     {
         $params = array(
@@ -226,7 +319,13 @@ class DbalGateway {
         $this->getConnection()->executeUpdate($sql, $params);
     }
     
-    public function isUserReleasedOnAddressFrom($username, $ipAddess, $releaseLimit)
+    /** 
+     * @param string $username
+     * @param string $ipAddress
+     * @param DateTime $releaseLimit
+     * @return boolean Wheater $username has been released for $ipAddress on or after the $releaseLimit.
+     */
+    public function isUserReleasedOnAddressFrom($username, $ipAddess, \DateTime $releaseLimit)
     {
         $sql = "SELECT max(r.releasedAt)
         FROM secu_releases r
@@ -237,7 +336,13 @@ class DbalGateway {
         return (boolean) $conn->fetchColumn($sql, array($releaseLimit->format('Y-m-d H:i:s'), $username, $ipAddess));
     }
     
-    public function isUserReleasedByCookieFrom($username, $cookieToken, $releaseLimit)
+    /** 
+     * @param string $username
+     * @param string $cookieToken
+     * @param DateTime $releaseLimit
+     * @return boolean Wheater $username has been released for $cookieToken on or after the $releaseLimit.
+     */
+    public function isUserReleasedByCookieFrom($username, $cookieToken, \DateTime $releaseLimit)
     {
         $sql = "SELECT max(r.releasedAt)
         FROM secu_releases r
@@ -248,6 +353,10 @@ class DbalGateway {
         return (boolean) $conn->fetchColumn($sql, array($releaseLimit->format('Y-m-d H:i:s'), $username, $cookieToken));
     }
     
+    /**
+     * Delete all releases dated before $dtLimit
+     * @param DateTime $dtLimit 
+     */
     public function deleteReleasesUntil(\DateTime $dtLimit) 
     {
         if (!$dtLimit) {

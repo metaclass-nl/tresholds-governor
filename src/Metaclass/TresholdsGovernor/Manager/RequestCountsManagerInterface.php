@@ -1,28 +1,103 @@
 <?php 
 namespace Metaclass\TresholdsGovernor\Manager;
 
+/**
+ * Instances of classes implementing this interface store and retrieve data and perform counting 
+ * about requests. 
+ * 
+ * @author Henk Verhoeven
+ * @copyright 2014 MetaClass Groningen 
+ */
 interface RequestCountsManagerInterface
 {
-    public function countLoginsFailedForIpAddres($ipAddress, $timeLimit);
+    /**
+     * @return int Total number of failures counted for $ipAddress with dtFrom after $timeLimit
+     * @param string $ipAddress
+     * @param DateTime $timeLimit
+     */
+    public function countLoginsFailedForIpAddres($ipAddress, \DateTime $timeLimit);
     
-    public function countLoginsFailedForUserName($username, $timeLimit);
+    /**
+     * @return int Total number of failures counted for $username with dtFrom after $timeLimit
+     * @param string $username
+     * @param DateTime $timeLimit
+     */
+    public function countLoginsFailedForUserName($username, \DateTime $timeLimit);
     
-    public function countLoginsFailedForUserOnAddress($username, $ipAddress, $timeLimit);
+    /**
+     * @return int Total number of failures counted for $username on $ipAddress with dtFrom after $timeLimit
+     * @param string $username
+     * @param string $ipAddress
+     * @param DateTime $timeLimit
+     */
+    public function countLoginsFailedForUserOnAddress($username, $ipAddress, \DateTime $timeLimit);
     
-    public function countLoginsFailedForUserByCookie($username, $cookieToken, $timeLimit);
+    /**
+     * @return int Total number of failures counted for $username with $cookieToken and dtFrom after $timeLimit
+     * @param string $username
+     * @param string $ipAddress
+     * @param DateTime $timeLimit
+     */
+    public function countLoginsFailedForUserByCookie($username, $cookieToken, \DateTime $timeLimit);
+
+    /**
+     * Insert 1 or increment loginsSucceeded for the supplied parameters.
+     * @param \DateTime $dateTime
+     * @param string $username
+     * @param string $ipAddress
+     * @param string $cookieToken
+     */
+    public function insertOrIncrementSuccessCount(\DateTime $dateTime, $username, $ipAddress, $cookieToken);
     
-    public function insertOrIncrementSuccessCount($dateTime, $username, $ipAddress, $cookieToken);
+    /**
+     * Insert 1 or increment loginsFailed with column values equal to all the corrsponding parameters.
+     * @param \DateTime $dateTime
+     * @param string $username
+     * @param string $ipAddress
+     * @param string $cookieToken
+     */
+    public function insertOrIncrementFailureCount(\DateTime $dateTime, $username, $ipAddress, $cookieToken);
     
-    public function insertOrIncrementFailureCount($dateTime, $username, $ipAddress, $cookieToken);
+    /** Release the RequestCounts for $username with dtFrom after $timeLimit 
+     * 
+     * @param string $username
+     * @param \DateTime $dateTime the date and time of the release
+     * @param \DateTime $timeLimit 
+     */
+    public function releaseCountsForUserName($username, \DateTime $dateTime, \DateTime $timeLimit);
     
-    public function releaseCountsForUserName($username, $dateTime, $timeLimit);
+    /** Release the RequestCounts for $ipAddress with dtFrom after $timeLimit 
+     * 
+     * @param string $ipAddress
+     * @param \DateTime $dateTime the date and time of the release
+     * @param \DateTime $timeLimit 
+     */
+    public function releaseCountsForIpAddress($ipAddress, \DateTime $dateTime, \DateTime $timeLimit);
     
-    public function releaseCountsForIpAddress($ipAddress, $dateTime, $timeLimit);
+    /** Release the RequestCounts for user on ip address and cookieToken 
+     * with $username and $ipAddress and dtFrom after $timeLimit 
+     * 
+     * @param string $username
+     * @param string $ipAddress
+     * @param \DateTime $dateTime the date and time of the release
+     * @param \DateTime $timeLimit 
+     */
+    public function releaseCountsForUserNameAndIpAddress($username, $ipAddress, \DateTime $dateTime, \DateTime $timeLimit);
     
-    public function releaseCountsForUserNameAndIpAddress($username, $ipAddress, $dateTime, $timeLimit);
+    /** Release the RequestCounts for user on ip address and cookieToken 
+     * with $username and $cookieToken and dtFrom after $timeLimit 
+     * 
+     * @param string $username
+     * @param string $ipAddress
+     * @param \DateTime $dateTime the date and time of the release
+     * @param \DateTime $timeLimit 
+     */
+    public function releaseCountsForUserNameAndCookie($username, $cookieToken, \DateTime $dateTime, \DateTime $timeLimit);
     
-    public function releaseCountsForUserNameAndCookie($username, $cookieToken, $dateTime, $timeLimit);
-    
-    public function deleteCountsUntil($limit);
+    /**
+     * Delete all RequestCounts with dtFrom before $limit
+     * @param \DateTime $limit 
+     */
+    public function deleteCountsUntil(\DateTime $limit);
         
 }

@@ -58,3 +58,12 @@ Issue #7  facilitate custom NoSQL storage
 - DbalGateway::insertOrUpdateCounts renamed to ::insertOrIncrementCount
 - TresholdsGovernorTest::testDeleteData1, ::testDeleteData2 now gets >>requestCountsManager, >>releasesManager
 	::testPackData now uses RdbManager, >>requestCountsManager, >>releasesManager
+----------------------------------------
+Issue #10 api docs
+- TresholdsGoverner completed api docs
+- Result\Rejection is now an abstract class
+- Result\Rejection and subclasses completed api docs
+- Gateway\DbalGateway \DataTime parameter type hints added, completed api docs
+- Manager\ReleasesManagerInterface \DataTime parameter type hints added, completed api docs
+- Manager\RequestCountsManagerInterface \DataTime parameter type hints added, completed api docs
+- Manager\RdbManager \DataTime parameter type hints added, completed api docs
