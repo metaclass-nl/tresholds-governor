@@ -1,4 +1,4 @@
-Issue #9 cross framework library refactoring
+AuthenticationGuardBundle Issue #9 cross framework library refactoring
 - Moved TresholdsGovernor, RequestCountsRepository from AuthenticationGuardBundle
 - Corrrected namespaces and use statements 
 - Result\Rejection and subclasses added, corresponding to AuthenticationGuardBundle\Exception\AuthenticationFailedException
@@ -10,7 +10,7 @@ Issue #9 cross framework library refactoring
 ----------------------------
 - TresholdsGovernor added default settings
 ----------------------------------
-Issue #6 Add a separate last releases table so that RequestCounts records do not need to be kept for much longer treshold 'allowReleasedUserOnAddressFor' . 
+AuthenticationGuardBundle Issue #6 Add a separate last releases table so that RequestCounts records do not need to be kept for much longer treshold 'allowReleasedUserOnAddressFor' .
 - RequestCountsRepository renamed to DbalGateway
 - TresholdsGovernor renamed property requestCountsRepo to requestCountsGateway
 - TresholdsGovernor 
@@ -21,10 +21,10 @@ Issue #6 Add a separate last releases table so that RequestCounts records do not
 	::insertOrUpdateRelease, ::deleteReleasesUntil added
 - TresholdsGovernorTest testDelete functions now also delete releases
  
-Issue #9 cross framework library refactoring
+AuthenticationGuardBundle Issue #9 cross framework library refactoring
 - doc/Installation.md added instructions for use without Symfony 2
 --------------------------------
-Issue #6 Add a function for clean-up of the RequestCounts 
+AuthenticationGuardBundle Issue #6 Add a function for clean-up of the RequestCounts
 - TresholdsGovernor::packData added
 	::releaseUserNameForIpAddressAndCookie now only adds Releases if allowReleasedUserByCookieFor or allowReleasedUserOnAddressFor
 - TresholdsGovernorTest::testPackData added
@@ -32,13 +32,13 @@ Issue #6 Add a function for clean-up of the RequestCounts
 - doc/Installation.md added index releasedAt to secu_releases table definition
 	added index byUsernameAndCookie to secu_requestcounts table definition
 ---------------------------------------
-Issue #6 last releases DbalGateway cross database version
+AuthenticationGuardBundle Issue #6 last releases DbalGateway cross database version
 - doc/Installation.md Added autoincrement id to releases table, added index byCookie
  - DabalGateway added ::insertRelease, ::updateRelease, ::getReleasesIdWhereDateAndUsernameAndIpAddressAndCookie
 	::insertOrUpdateRelease now calls getReleaesId, insert or update functions
  	::isUserReleasedOnAddressFrom, ::isUserReleasedByCookieFrom now select max(releasedAt) so that race conditions will not affect the outcomes
 -------------------------------------------
-Issue #6 Add a separate last releases table: rename DbalGateway RequestCounts methods
+AuthenticationGuardBundle Issue #6 Add a separate last releases table: rename DbalGateway RequestCounts methods
 - DbalGateway::insertOrUpdateCounts added
 	::createWith renamed to ::createRequestCountsWith now protected, expects $counter column name instead of $loginSucceeded boolean
 	::incrementColumnWhereId renamed to ::incrementCountWhereId, now protected
@@ -47,7 +47,7 @@ Issue #6 Add a separate last releases table: rename DbalGateway RequestCounts me
 	::updateColumnWhereColumnNullAfterSupplied renamed to ::updateCountsColumnWhereColumnNullAfterSupplied
 - ::registerAuthenticationSuccess, ::registerAuthenticationFailure factored out ::insertOrUpdateRequestCounts
 ----------------------------------------------
-Issue #7  facilitate custom NoSQL storage 
+AuthenticationGuardBundle Issue #7  facilitate custom NoSQL storage
 - Metaclass\TresholdsGovernor\Manager\RdbManager added 
 - ReleasesManagerInterface added
 - RequestCountsManagerInterface added
@@ -59,7 +59,7 @@ Issue #7  facilitate custom NoSQL storage
 - TresholdsGovernorTest::testDeleteData1, ::testDeleteData2 now gets >>requestCountsManager, >>releasesManager
 	::testPackData now uses RdbManager, >>requestCountsManager, >>releasesManager
 ----------------------------------------
-Issue #10 api docs
+AuthenticationGuardBundle Issue #10 api docs
 - TresholdsGoverner completed api docs
 - Result\Rejection is now an abstract class
 - Result\Rejection and subclasses completed api docs
@@ -67,3 +67,8 @@ Issue #10 api docs
 - Manager\ReleasesManagerInterface \DataTime parameter type hints added, completed api docs
 - Manager\RequestCountsManagerInterface \DataTime parameter type hints added, completed api docs
 - Manager\RdbManager \DataTime parameter type hints added, completed api docs
+-------------------------------------------
+AuthenticationGuardBundle Issue #9 cross framework library refactoring
+- corrected in-bundle documentation
+AuthenticationGuardBundle Issue #6 Add a function for clean-up of the RequestCounts
+- Installation.md added how to call the function from Cron or so

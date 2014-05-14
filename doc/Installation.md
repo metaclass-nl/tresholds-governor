@@ -27,79 +27,90 @@ From your own application:
 3. Create the database table
 
 	```sql
-CREATE TABLE `secu_requests` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `dtFrom` datetime NOT NULL,
-  `username` varchar(25) COLLATE utf8_unicode_ci NOT NULL,
-  `ipAddress` varchar(25) COLLATE utf8_unicode_ci NOT NULL,
-  `cookieToken` varchar(40) COLLATE utf8_unicode_ci NOT NULL,
-  `loginsFailed` int(11) NOT NULL DEFAULT '0',
-  `loginsSucceeded` int(11) NOT NULL DEFAULT '0',
-  `requestsAuthorized` int(11) NOT NULL DEFAULT '0',
-  `requestsDenied` int(11) NOT NULL DEFAULT '0',
-  `userReleasedAt` datetime DEFAULT NULL,
-  `addresReleasedAt` datetime DEFAULT NULL,
-  `userReleasedForAddressAndCookieAt` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `byDtFrom` (`dtFrom`),
-  KEY `byUsername` (`username`,`dtFrom`,`userReleasedAt`),
-  KEY `byAddress` (`ipAddress`,`dtFrom`,`addresReleasedAt`),
-  KEY `byUsernameAndAddress` (`username`,`ipAddress`,`dtFrom`,`userReleasedForAddressAndCookieAt`),
-  KEY `byUsernameAndCookie` (`username`,`cookieToken`,`dtFrom`,`userReleasedForAddressAndCookieAt`),
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+    CREATE TABLE `secu_requests` (
+      `id` int(11) NOT NULL AUTO_INCREMENT,
+      `dtFrom` datetime NOT NULL,
+      `username` varchar(25) COLLATE utf8_unicode_ci NOT NULL,
+      `ipAddress` varchar(25) COLLATE utf8_unicode_ci NOT NULL,
+      `cookieToken` varchar(40) COLLATE utf8_unicode_ci NOT NULL,
+      `loginsFailed` int(11) NOT NULL DEFAULT '0',
+      `loginsSucceeded` int(11) NOT NULL DEFAULT '0',
+      `requestsAuthorized` int(11) NOT NULL DEFAULT '0',
+      `requestsDenied` int(11) NOT NULL DEFAULT '0',
+      `userReleasedAt` datetime DEFAULT NULL,
+      `addresReleasedAt` datetime DEFAULT NULL,
+      `userReleasedForAddressAndCookieAt` datetime DEFAULT NULL,
+      PRIMARY KEY (`id`),
+      KEY `byDtFrom` (`dtFrom`),
+      KEY `byUsername` (`username`,`dtFrom`,`userReleasedAt`),
+      KEY `byAddress` (`ipAddress`,`dtFrom`,`addresReleasedAt`),
+      KEY `byUsernameAndAddress` (`username`,`ipAddress`,`dtFrom`,`userReleasedForAddressAndCookieAt`),
+      KEY `byUsernameAndCookie` (`username`,`cookieToken`,`dtFrom`,`userReleasedForAddressAndCookieAt`),
+    ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
-CREATE TABLE `secu_releases` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `username` varchar(25) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
-  `ipAddress` varchar(25) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
-  `cookieToken` varchar(40) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
-  `releasedAt` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `releasedAt` (`releasedAt`),
-  KEY `extkey` (`username`,`ipAddress`,`cookieToken`),
-  KEY `byCookie` (`username`,`cookieToken`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
-  
-	```
+    CREATE TABLE `secu_releases` (
+      `id` int(11) NOT NULL AUTO_INCREMENT,
+      `username` varchar(25) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
+      `ipAddress` varchar(25) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
+      `cookieToken` varchar(40) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
+      `releasedAt` datetime DEFAULT NULL,
+      PRIMARY KEY (`id`),
+      KEY `releasedAt` (`releasedAt`),
+      KEY `extkey` (`username`,`ipAddress`,`cookieToken`),
+      KEY `byCookie` (`username`,`cookieToken`)
+    ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+```
 	(you may use MyISAM)
 	(you may use some other DBMS that is supported by Doctrine DBAL)
 
 4. From your own application's authentication code:
 
 	```php
-use Metaclass\TresholdsGovernor\Service\TresholdsGovernor;
-use Metaclass\TresholdsGovernor\Gateway\DbalGateway;
+    use Metaclass\TresholdsGovernor\Service\TresholdsGovernor;
+    use Metaclass\TresholdsGovernor\Gateway\DbalGateway;
 
-//initialize your Doctrine\DBAL\Connection
-$dbalGateway = new DbalGateway($dbalConnection);
-//parameters see step 5
-$governor = new TresholdsGovernor($parameters, $dbalGateway);
-//alternatively you may set separate gateways for RequestCounts to $governor->requestCountsGateway 
-//and for Releases to $governor->releasesGateway
+    //initialize your Doctrine\DBAL\Connection
+    $dbalGateway = new DbalGateway($dbalConnection);
+    //parameters see step 6
+    $governor = new TresholdsGovernor($parameters, $dbalGateway);
+    //alternatively you may set separate gateways for RequestCounts to $governor->requestCountsGateway
+    //and for Releases to $governor->releasesGateway
 
-$governor->initFor($ipAddress, $username, $password, ''); //using the last parameter is not yet documented 
-$result = $governor->checkAuthentication();
-if ($result !== null) {
-	//$result holds an instance of a subclass of Metaclass\TresholdsGovernor\Result\Rejection
-	//block authentication. 
-} else {
-    //attempt to authenticate user
-} 
+    $governor->initFor($ipAddress, $username, $password, ''); //using the last parameter is not yet documented
+    $result = $governor->checkAuthentication();
+    if ($result !== null) {
+        //$result holds an instance of a subclass of Metaclass\TresholdsGovernor\Result\Rejection
+        //block authentication.
+    } else {
+        //attempt to authenticate user
+    }
 	```
 
-5. You may also set the following configuraton parameters to the TresholdsGovernor (defaults shown):
+5. From cron or so you may garbage-collect/pack stored RequestCounts:
+
+    ```php
+    use Metaclass\TresholdsGovernor\Service\TresholdsGovernor;
+    use Metaclass\TresholdsGovernor\Gateway\DbalGateway;
+
+    //initialize your Doctrine\DBAL\Connection
+    $dbalGateway = new DbalGateway($dbalConnection);
+    //parameters see step 6
+    $governor = new TresholdsGovernor($parameters, $dbalGateway);
+    $governor->packData();
+    ```
+
+6. You may also set the following configuraton parameters to the TresholdsGovernor (defaults shown):
 
 	```php
-$parameters = array(
-    'counterDurationInSeconds' => 300,
-    'blockUsernamesFor' => "24 minutes",     // actual blocking for up to counterDurationInSeconds shorter!
-    'limitPerUserName' => 3,
-    'blockIpAddressesFor' => "17 minutes",   // actual blocking for up to counterDurationInSeconds shorter!
-    'limitBasePerIpAddress' => 10,
-    'releaseUserOnLoginSuccess' => false,
-    'allowReleasedUserOnAddressFor' => "30 days" );
+    $parameters = array(
+        'counterDurationInSeconds' => 300,
+        'blockUsernamesFor' => "24 minutes",     // actual blocking for up to counterDurationInSeconds shorter!
+        'limitPerUserName' => 3,
+        'blockIpAddressesFor' => "17 minutes",   // actual blocking for up to counterDurationInSeconds shorter!
+        'limitBasePerIpAddress' => 10,
+        'releaseUserOnLoginSuccess' => false,
+        'allowReleasedUserOnAddressFor' => "30 days" );
 ```
-
   
 Configurations
 --------------

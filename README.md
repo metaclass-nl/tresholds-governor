@@ -41,8 +41,6 @@ This is a pre-release version under development.
 May be vurnerable to user enumeration through timing attacks because of differences in database query performance 
 for frequently and infrequently used usernames,
 
-Does not garbage-collect nor pack stored RequestCounts. 
-
 DOCUMENTATION
 -------------
 - [Installation and configuration](doc/Installation.md)

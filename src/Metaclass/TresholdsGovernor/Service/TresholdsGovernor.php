@@ -155,7 +155,7 @@ class TresholdsGovernor {
      * Decides wheather or not to block the current request.
      * @param boolean $justFailed Wheather the login has already failed (for reasons external to this governor) 
      *     but is not yet registered as a failure. Default is false.
-     * @return  Metaclass\TresholdsGovernor\Result\Rejection or null if the governor does not require the login to be blocked. 
+     * @return  \Metaclass\TresholdsGovernor\Result\Rejection or null if the governor does not require the login to be blocked.
      *   (Blocking may still take place for reasons external to this governor)
      */
     public function checkAuthentication($justFailed=false) 
@@ -211,7 +211,7 @@ class TresholdsGovernor {
     /** Register that the current login attempt was successfull */
     public function registerAuthenticationSuccess() 
     {
-        //? should we releaseUserNameForIpAddress? And should'nt that have a shorter effect then release from e-mail?
+        //? should we releaseUserNameForIpAddress? And shouldn't that have a shorter effect then release from e-mail?
         //? should we register (some) other failures in the session and release those here? 
         
         $dateTime = $this->getRequestCountsDt($this->dtString);

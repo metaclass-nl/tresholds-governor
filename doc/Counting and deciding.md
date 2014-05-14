@@ -96,4 +96,4 @@ All these exceptions inherit from AuthenticationBlockedException.
 
 Improvements
 ------------
-Ideas for improvements are duscussed [on the wiki](https://github.com/metaclass-nl/MetaclassAuthenticationGuardBundle/wiki)
+Ideas for improvements are discussed [on the wiki](https://github.com/metaclass-nl/MetaclassAuthenticationGuardBundle/wiki)
