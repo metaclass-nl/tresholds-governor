@@ -3,7 +3,7 @@ namespace Metaclass\TresholdsGovernor\Tests\Service;
 
 use Metaclass\TresholdsGovernor\Service\TresholdsGovernor;
 use Metaclass\TresholdsGovernor\Manager\RdbManager;
-use Metaclass\TresholdsGovernor\Result\Rejection;
+use Metaclass\TresholdsGovernor\Result\AuthenticationBlocked;
 use Metaclass\TresholdsGovernor\Result\IpAddressBlocked;
 use Metaclass\TresholdsGovernor\Result\UsernameBlocked;
 use Metaclass\TresholdsGovernor\Result\UsernameBlockedForCookie;

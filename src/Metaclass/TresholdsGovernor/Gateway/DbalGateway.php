@@ -42,9 +42,6 @@ class DbalGateway {
      */
     public function countWhereSpecifiedAfter($counterColumn, $username, $ipAddress, $cookieToken, \DateTime $dtLimit, $releaseColumn=null)
     {
-        if ($username === null && $ipAddress == null && $cookieToken == null) {
-            throw new BadFunctionCallException ('At least one of username, ipAddress, cookieToken must be supplied');
-        }
         $qb = $this->getConnection()->createQueryBuilder();
         $qb->select("sum(r.$counterColumn)")
             ->from('secu_requests', 'r')
@@ -67,7 +64,7 @@ class DbalGateway {
         }
         return (int) $qb->execute()->fetchColumn();
     }
-    
+
     /**
      * Insert 1 or increment the counter column corresonding to $loginSucceeded 
      * AND all corrsponding column values equal to the other parameters.
@@ -81,15 +78,17 @@ class DbalGateway {
      * @param string $ipAddress
      * @param string $cookieToken
      * @param boolean $loginSucceeded wheather the login succeede (otherwise it failed)
+     * @param string $blockedCounterName if supplied, also increment the corresponding counter
+     *    WARNING: Supply literal string or well-validated vale to prevent SQL injection!
      */
-    public function insertOrIncrementCount(\DateTime $dateTime, $username, $ipAddress, $cookieToken, $loginSucceeded)
+    public function insertOrIncrementCount(\DateTime $dateTime, $username, $ipAddress, $cookieToken, $loginSucceeded, $blockedCounterName=null)
     {
         $counter = $loginSucceeded ? 'loginsSucceeded' : 'loginsFailed';
         $id = $this->getCountsIdWhereDateAndUsernameAndIpAddressAndCookie($dateTime, $username, $ipAddress, $cookieToken);
         if ($id) {
-            $this->incrementCountWhereId($counter, $id);
+            $this->incrementCountWhereId($counter, $id, $blockedCounterName);
         } else {
-            $this->createRequestCountsWith($dateTime, $ipAddress, $username, $cookieToken, $counter);
+            $this->createRequestCountsWith($dateTime, $ipAddress, $username, $cookieToken, $counter, $blockedCounterName);
         }
         
     }
@@ -117,16 +116,19 @@ class DbalGateway {
      * 
      * @param string $columnToUpdate
      * @param int $id
+     * @param string $blockedCounterName if supplied, also increment the corresponding counter
+     *    WARNING: Supply literal string or well-validated vale to prevent SQL injection!
      */
-    protected function incrementCountWhereId($columnToUpdate, $id)
+    protected function incrementCountWhereId($columnToUpdate, $id, $blockedCounterName=null)
     {
         $conn = $this->getConnection();
-        $qb = $conn->createQueryBuilder();
-        $qb->update('secu_requests', 'r')
-            ->set($columnToUpdate, "$columnToUpdate + 1")
-            ->where("id = :id")
-            ->setParameter('id', $id)
-            ->execute();
+        $params = array('id' => $id);
+        $sql = "UPDATE secu_requests SET $columnToUpdate = $columnToUpdate + 1";
+        if ($blockedCounterName !== null) {
+            $sql .= ", $blockedCounterName = $blockedCounterName + 1";
+        }
+        $sql .= " WHERE id = :id";
+        $conn->executeUpdate($sql, $params);
     }
     
     /**
@@ -140,8 +142,10 @@ class DbalGateway {
      * @param string $ipAddress
      * @param string $cookieToken
      * @param string $counter name of the counter column
+     * @param string $blockedCounterName if supplied, set increment the corresponding counter to 1
+     *    WARNING: Supply literal string or well-validated vale to prevent SQL injection!
      */
-    protected function createRequestCountsWith($datetime, $ipAddress, $username, $cookieToken, $counter)
+    protected function createRequestCountsWith($datetime, $ipAddress, $username, $cookieToken, $counter, $blockedCounterName=null)
     {
         $conn = $this->getConnection();
         $params = array(
@@ -170,7 +174,7 @@ class DbalGateway {
             ->andWhere('r.ipAddress = :ipAddress')
             ->andWhere('r.dtFrom = :dtFrom')
             ->andWhere('r.cookieToken = :token')
-            ->andWhere("addresReleasedAt IS NULL")
+            ->andWhere("addressReleasedAt IS NULL")
             ->andWhere("userReleasedAt IS NULL")
             ->andWhere("userReleasedForAddressAndCookieAt IS NULL")
             ->setParameter('username', $username)
@@ -237,7 +241,87 @@ class DbalGateway {
         ->setParameter('dtLimit', $dtLimit->format('Y-m-d H:i:s'));
         $qb->execute();
     }
-    
+
+//Statistics
+
+    public function countsGroupedByIpAddress(\DateTime $limitFrom, \DateTime $limitUntil=null, $username=null)
+    {
+        $params = array($limitFrom->format('Y-m-d H:i:s'));
+        $sql = "SELECT r.ipAddress
+          , count(distinct(r.username)) as usernames
+          , sum(r.loginsSucceeded) as loginsSucceeded
+          , sum(r.loginsFailed) as loginsFailed
+          , sum(r.ipAddressBlocked) as ipAddressBlocked
+          , sum(r.usernameBlocked) as usernameBlocked
+          , sum(r.usernameBlockedForIpAddress) as usernameBlockedForIpAddress
+          , sum(r.usernameBlockedForCookie) as usernameBlockedForCookie
+            FROM secu_requests r
+            WHERE (r.dtFrom >= ?) AND (r.addressReleasedAt IS NULL)";
+        if ($limitUntil !== null) {
+            $sql .= " AND (r.dtFrom < ?)";
+            $params[] = $limitUntil->format('Y-m-d H:i:s');
+        }
+        if ($username !== null) {
+            $sql .= " AND (r.username = ?)";
+            $params[] = $username;
+        }
+        $sql .= "
+            GROUP BY r.ipAddress
+            ORDER BY r.ipAddress
+            LIMIT 200";
+
+        $conn = $this->getConnection();
+        return $conn->fetchAll($sql, $params);
+    }
+
+    public function countsBetween(\DateTime $limitFrom, \DateTime $limitUntil, $username=null, $ipAddress=null)
+    {
+        $params = array($limitFrom->format('Y-m-d H:i:s'), $limitUntil->format('Y-m-d H:i:s'));
+        $sql = "SELECT * FROM secu_requests r
+            WHERE (r.dtFrom >= ?)  AND (r.dtFrom < ?)";
+        if ($username !== null) {
+            $sql .= " AND (r.username = ?)";
+            $params[] = $username;
+        }
+        if ($ipAddress !== null) {
+            $sql .= " AND (r.ipAddress = ?)";
+            $params[] = $ipAddress;
+        }
+        $sql .= "
+            ORDER BY r.dtFrom DESC
+            LIMIT 500";
+
+        $conn = $this->getConnection();
+        return $conn->fetchAll($sql, $params);
+    }
+
+    //not used
+    public function countColumn($column, \DateTime $timeLimit)
+    {
+        $sql = "SELECT count(r.$column) as total,
+        FROM secu_requests r
+        WHERE (r.dtFrom >= ?) AND (r.addressReleasedAt IS NULL)";
+
+        $conn = $this->getConnection();
+        return $conn->fetchAll($sql, array($timeLimit->format('Y-m-d H:i:s')));
+    }
+
+    //werkt misschien niet correct
+    public function countAddressesBlocked(\DateTime $timeLimit, $failureLimit)
+    {
+        $sql = "SELECT count(r.ipAddress) as blocked
+        FROM secu_requests r
+        WHERE (r.dtFrom >= ?) AND (r.addressReleasedAt IS NULL)
+        GROUP BY r.ipAddress
+        HAVING sum(r.loginsFailed) >= ?
+        ";
+
+        $conn = $this->getConnection();
+        return $conn->fetchAll( $sql, array($timeLimit->format('Y-m-d H:i:s'), $failureLimit) );
+
+    }
+
+
 //------------------------ ReleasesGatewayInterface ---------------------------------------------
 
     /** 

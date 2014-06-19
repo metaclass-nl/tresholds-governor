@@ -2,7 +2,7 @@
 namespace Metaclass\TresholdsGovernor\Result;
 
 /**
- * An instance of this class reprecents a decision by a TreholdsGovernor to reject a login attempt because 
+ * An instance of this class represents a decision by a TreholdsGovernor to block a login attempt because
  * the user name is blocked for the token from the cookie that was sent with the request.
  *  
  * @author Henk Verhoeven
@@ -10,6 +10,10 @@ namespace Metaclass\TresholdsGovernor\Result;
  */
 class UsernameBlockedForCookie extends Rejection
 {
-    
+    public function getCounterName()
+    {
+        return 'usernameBlockedForCookie';
+    }
+
 }
 ?>

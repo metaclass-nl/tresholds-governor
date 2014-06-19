@@ -1,6 +1,8 @@
 <?php 
 namespace Metaclass\TresholdsGovernor\Manager;
 
+use Metaclass\TresholdsGovernor\Result\Rejection;
+
 /**
  * Instances of this class store and retrieve data and perform counting about login requests and releases.
  * The actual storage is done in a relational database queried by an instance of RdbGateway.
@@ -11,11 +13,11 @@ namespace Metaclass\TresholdsGovernor\Manager;
 class RdbManager implements ReleasesManagerInterface,  RequestCountsManagerInterface
 {
     
-    /** @var Metaclass\TresholdsGovernor\Gateway\RdbGateway */
+    /** @var \Metaclass\TresholdsGovernor\Gateway\RdbGateway */
     public $gateway;
     
     /**
-     * @param Metaclass\TresholdsGovernor\Gateway\RdbGateway $gateway
+     * @param \Metaclass\TresholdsGovernor\Gateway\RdbGateway $gateway
      */
     public function __construct($gateway)
     {
@@ -23,11 +25,11 @@ class RdbManager implements ReleasesManagerInterface,  RequestCountsManagerInter
     }
     
 //RequestCountsManagerInterface
-    
+
     /** {@inheritdoc} */
     public function countLoginsFailedForIpAddres($ipAddress, \DateTime $timeLimit)
     {
-        return $this->gateway->countWhereSpecifiedAfter('loginsFailed', null, $ipAddress, null, $timeLimit, 'addresReleasedAt');
+        return $this->gateway->countWhereSpecifiedAfter('loginsFailed', null, $ipAddress, null, $timeLimit, 'addressReleasedAt');
     }
     
     /** {@inheritdoc} */
@@ -55,9 +57,10 @@ class RdbManager implements ReleasesManagerInterface,  RequestCountsManagerInter
     }
     
     /** {@inheritdoc} */
-    public function insertOrIncrementFailureCount(\DateTime $dateTime, $username, $ipAddress, $cookieToken)
+    public function insertOrIncrementFailureCount(\DateTime $dateTime, $username, $ipAddress, $cookieToken, Rejection $rejection=null)
     {
-        $this->gateway->insertOrIncrementCount($dateTime, $username, $ipAddress, $cookieToken, false);
+        $blockedCounterName = $rejection === null ? null : $rejection->getCounterName();
+        $this->gateway->insertOrIncrementCount($dateTime, $username, $ipAddress, $cookieToken, false, $blockedCounterName);
     }
     
     /** {@inheritdoc} */
@@ -71,7 +74,7 @@ class RdbManager implements ReleasesManagerInterface,  RequestCountsManagerInter
     public function releaseCountsForIpAddress($ipAddress, \DateTime $dateTime, \DateTime $timeLimit)
     {
         $this->gateway->updateCountsColumnWhereColumnNullAfterSupplied(
-            'addresReleasedAt', $dateTime, $timeLimit, null, $ipAddress, null);
+            'addressReleasedAt', $dateTime, $timeLimit, null, $ipAddress, null);
     }
     
     /** {@inheritdoc} */
@@ -93,7 +96,48 @@ class RdbManager implements ReleasesManagerInterface,  RequestCountsManagerInter
     {
         $this->gateway->deleteCountsUntil($limit);
     }
-    
+
+//Statistics
+    public function countLoginsFailed( \DateTime $timeLimit)
+    {
+        return $this->gateway->countWhereSpecifiedAfter('loginsFailed', null, null, null, $timeLimit);
+    }
+
+    public function countLoginsSucceeded( \DateTime $timeLimit)
+    {
+        return $this->gateway->countWhereSpecifiedAfter('loginsSucceeded', null, null, null, $timeLimit);
+    }
+
+    public function countLoginsSucceededForUserName($username, \DateTime $timeLimit)
+    {
+        return $this->gateway->countWhereSpecifiedAfter('loginsSucceeded', $username, null, null, $timeLimit);
+    }
+
+    public function countsGroupedByIpAddress(\DateTime $limitFrom, \DateTime $limitUntil=null, $username=null)
+    {
+        return $this->gateway->countsGroupedByIpAddress($limitFrom, $limitUntil, $username);
+    }
+
+    public function countsByUsernameBetween($username, \DateTime $limitFrom, \DateTime $limitUntil)
+    {
+        return $this->gateway->countsBetween($limitFrom, $limitUntil, $username);
+    }
+
+    public function countsByAddressBetween($ipAddress, \DateTime $limitFrom, \DateTime $limitUntil)
+    {
+        return $this->gateway->countsBetween($limitFrom, $limitUntil, null, $ipAddress);
+    }
+
+    public function totalAndBlockedAddresses(\DateTime $timeLimit, $failureLimit)
+    {
+        return $this->gateway->totalAndBlockedAddresses($timeLimit, $failureLimit);
+    }
+
+    public function countAddressesBlocked(\DateTime $timeLimit, $failureLimit)
+    {
+        return $this->gateway->countAddressesBlocked($timeLimit, $failureLimit);
+    }
+
 //ReleasesManagerInterface
 
     
@@ -120,6 +164,7 @@ class RdbManager implements ReleasesManagerInterface,  RequestCountsManagerInter
      {
          $this->gateway->deleteReleasesUntil($limit);
      }
+
 }
 
 ?>

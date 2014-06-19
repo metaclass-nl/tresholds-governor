@@ -72,3 +72,32 @@ AuthenticationGuardBundle Issue #9 cross framework library refactoring
 - corrected in-bundle documentation
 AuthenticationGuardBundle Issue #6 Add a function for clean-up of the RequestCounts
 - Installation.md added how to call the function from Cron or so
+-------------------------------------------------
+- TresholdsGovernor::packData factored out getMinBlockingLimit, now uses keepCountsFor parameter
+	>>isUserReleasedOnAddress public
+	>>keepCountsFor parameter added to support blocking history for administration purposes
+	::registerAuthenticationFailed $rejection parameter added
+	::decide corrected errorneous application of limits
+- RdbManager, DbalGateway added methods for statistics
+- DbalGateway::countWhereSpecifiedAfter no longer requieres one of username, ipAddress, cookieToken to be supplied
+	added methods for statistics
+	::insertOrIncrementCount now expects counterName instead of succeeded/failed boolean
+	::countAddressesBlocked corrected errorneous application of limits
+	::countsGroupedByIpAddress removed `blocked` column
+- RdbManager, DbalGateway, Install.md, RequestCountsManagerInterface, ReleasesManagerInterface
+	corrected column name:
+		ALTER TABLE `secu_requests` CHANGE `addresReleasedAt` `addressReleasedAt` DATETIME NULL DEFAULT NULL ;
+    added column names for blockedCounts
+		ALTER TABLE `secu_requests` ADD `ipAddressBlocked` INT NOT NULL DEFAULT '0' AFTER `loginsSucceeded` ,
+        ADD `usernameBlocked` INT NOT NULL DEFAULT '0' AFTER `ipAddressBlocked` ,
+        ADD `usernameBlockedForIpAddress` INT NOT NULL DEFAULT '0' AFTER `usernameBlocked` ,
+        ADD `usernameBlockedForCookie` INT NOT NULL DEFAULT '0' AFTER `usernameBlockedForIpAddress` ;
+- RdbManager, RequestCountsManagerInterface
+    ::insertOrIncrementFailureCount $rejection parameter added
+- DbalGateway::insertOrIncrementCount, ::incrementCountWhereId, ::createRequestCountsWith
+    parameter $blockedCounterName added
+comitted, not pushed.
+    (blocked columns and statistics need tests and documentation,
+    statistics UI need refactoring from UserBundle)
+-----------------------------------------------------------
+

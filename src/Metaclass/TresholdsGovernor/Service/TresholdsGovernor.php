@@ -3,12 +3,11 @@ namespace Metaclass\TresholdsGovernor\Service;
 
 use Doctrine\DBAL\Connection;
 
+use Metaclass\TresholdsGovernor\Result\Rejection;
 use Metaclass\TresholdsGovernor\Result\UsernameBlocked;
 use Metaclass\TresholdsGovernor\Result\IpAddressBlocked;
 use Metaclass\TresholdsGovernor\Result\UsernameBlockedForCookie;
 use Metaclass\TresholdsGovernor\Result\UsernameBlockedForIpAddress;
-
-use Metaclass\TresholdsGovernor\Gateway\DbalGateway;
 
 /**
  * Registers authentication counts, summarizes them and decides to block by username or client ip address for which 
@@ -21,10 +20,10 @@ use Metaclass\TresholdsGovernor\Gateway\DbalGateway;
 class TresholdsGovernor {
 
 //dependencies
-    /** @var Metaclass\TresholdsGovernor\Manger\RequestCountsManagerInterface $requestCountsManager does the actual storage and summation of RequestCounts */
+    /** @var \Metaclass\TresholdsGovernor\Manager\RequestCountsManagerInterface $requestCountsManager does the actual storage and summation of RequestCounts */
     public $requestCountsManager;
 
-    /** @var Metaclass\TresholdsGovernor\Manger\RleeasesManagerInterface $releasesManager does the actual storage and summation of Releases */
+    /** @var \Metaclass\TresholdsGovernor\Manager\ReleasesManagerInterface $releasesManager does the actual storage and summation of Releases */
     public $releasesManager;
 
     /** @var string $dtString holding the current date and time in format Y-m-d H:i:s */
@@ -57,6 +56,11 @@ class TresholdsGovernor {
     
     /** @var boolean $releaseUserOnLoginSuccess Wheather each time the user logs in sucessfully, the username is released for all ip addresses and user agents. */
     public $releaseUserOnLoginSuccess = false;
+
+    /** @var string For how long RequestCounts are kept. Usually administrators want to look into
+     * past blockings if a user ask questions when he/she can't log in.
+     * This setting should never be set lower then $blockUsernamesFor and $blockIpAddressesFor */
+    public $keepCountsFor = '4 days';
     
 //variables
     /** @var string $ipAddress IP Address sending the request that is being processed */ 
@@ -75,7 +79,7 @@ class TresholdsGovernor {
     protected $failureCountForUserName;
     
     /** @var boolean $isUserReleasedOnAddress Wheater $this->username has been released for $this->ipAddress within the $this->allowReleasedUserOnAddressFor duration */
-    protected $isUserReleasedOnAddress = false;
+    public $isUserReleasedOnAddress = false;
     
     /** @var int $failureCountForUserOnAddress Total number of failures counted by the combination of both $this->username and $this->ipAddress within the $this->blockUsernamesFor duration */
     protected $failureCountForUserOnAddress;
@@ -91,7 +95,7 @@ class TresholdsGovernor {
      * @param array $params Initialization parameters. Keys must match public property names.
      * @param Object $dataManager must implement both RequestCountsManagerInterface and ReleasesManagerInterface. 
      *     This parameter should be left null if separate RequestCountsManager and ReleasesManager will be set to the corresponding public properties.
-     * @throws ReflectionException if property with the name of a key does not exist or is not public 
+     * @throws \ReflectionException if property with the name of a key does not exist or is not public
      */
     public function __construct($params, $dataManager=null) {
         $this->requestCountsManager = $dataManager;
@@ -102,7 +106,7 @@ class TresholdsGovernor {
     
     /** Sets the protected parameter properties 
      * @param array $params Initialization parameters. 
-     * @throws ReflectionException if property with the name of a key does not exist or is not public */
+     * @throws \ReflectionException if property with the name of a key does not exist or is not public */
     protected function setPropertiesFromParams($params)
     {
         $rClass = new \ReflectionClass($this);
@@ -126,7 +130,7 @@ class TresholdsGovernor {
      */
     public function initFor($ipAddress, $username, $password, $cookieToken) 
     {
-        //cast to string because null is used for control in some Repo functions
+        //cast to string because null is used for control in some Gateway functions
         $this->ipAddress = (string) $ipAddress;
         $this->username = (string) $username;
         $this->cookieToken = (string) $cookieToken; 
@@ -139,7 +143,10 @@ class TresholdsGovernor {
         $timeLimit = new \DateTime("$this->dtString - $this->blockUsernamesFor");
         $this->failureCountForUserName = $this->requestCountsManager->countLoginsFailedForUserName($username, $timeLimit);
         $this->failureCountForUserOnAddress = $this->requestCountsManager->countLoginsFailedForUserOnAddress($username, $ipAddress, $timeLimit);
-        $this->failureCountForUserByCookie = $this->requestCountsManager->countLoginsFailedForUserByCookie($username, $cookieToken, $timeLimit);
+
+        $this->failureCountForUserByCookie = $cookieToken
+            ? $this->requestCountsManager->countLoginsFailedForUserByCookie($username, $cookieToken, $timeLimit)
+            : null;
 
         if ($this->allowReleasedUserOnAddressFor) {
             $timeLimit = new \DateTime("$this->dtString - $this->allowReleasedUserOnAddressFor");
@@ -152,7 +159,7 @@ class TresholdsGovernor {
     }
 
     /**
-     * Decides wheather or not to block the current request.
+     * Decides wheather or not to block the current request amd registers failure on blocking
      * @param boolean $justFailed Wheather the login has already failed (for reasons external to this governor) 
      *     but is not yet registered as a failure. Default is false.
      * @return  \Metaclass\TresholdsGovernor\Result\Rejection or null if the governor does not require the login to be blocked.
@@ -160,7 +167,6 @@ class TresholdsGovernor {
      */
     public function checkAuthentication($justFailed=false) 
     {
-        $result = null;
         if ($justFailed) { // failure, but not yet registered, add it here
             $this->failureCountForUserName++;
             $this->failureCountForIpAddress++;
@@ -168,36 +174,50 @@ class TresholdsGovernor {
             $this->failureCountForUserByCookie++;
             //WARNING, these increments must be done BEFORE decision making, but unit tests do not test that 
         }
-        if ($this->isUserReleasedOnAddress) {
-            if ($this->failureCountForUserOnAddress > $this->limitPerUserName) { 
-                $result = new UsernameBlockedForIpAddress("Username '%username%' is blocked for IP Address '%ipAddress%'",
-                     array('%username%' => $this->username, '%ipAddress%' => $this->ipAddress));
-            }
-        } elseif ($this->isUserReleasedByCookie) { 
-            if ($this->failureCountForUserByCookie > $this->limitPerUserName) {
-                $result = new UsernameBlockedForCookie("Username '%username%' is blocked for cookie '%cookieToken%'",
-                    array('%username%' => $this->username, '%cookieToken%' => $this->cookieToken));
-            }
-        } else {
-            if ($this->failureCountForIpAddress > $this->limitBasePerIpAddress) {
-                $result = new IpAddressBlocked("IP Adress '%ipAddress%' is blocked",
-                    array('%ipAddress%' => $this->ipAddress));
-            }
-            if ($this->failureCountForUserName > $this->limitPerUserName) {
-                $result = new UsernameBlocked("Username '%username%' is blocked",
-                    array('%username%' => $this->username));
-            }
-        }
+        $result = $this->decide();
+
        if ($justFailed || $result) {
-           $this->registerAuthenticationFailure();
+           $this->registerAuthenticationFailure($result);
        }
        return $result;
     }
-    
+
+    /**
+     * Decides wheather or not to block the current request.
+     * @param boolean $justFailed Wheather the login has already failed (for reasons external to this governor)
+     *     but is not yet registered as a failure. Default is false.
+     * @return  \Metaclass\TresholdsGovernor\Result\Rejection or null if the governor does not require the login to be blocked.
+     *   (Blocking may still take place for reasons external to this governor)
+     */
+    public function decide()
+    {
+        if ($this->isUserReleasedOnAddress) {
+            if ($this->failureCountForUserOnAddress >= $this->limitPerUserName) {
+                return new UsernameBlockedForIpAddress("Username '%username%' is blocked for IP Address '%ipAddress%'",
+                    array('%username%' => $this->username, '%ipAddress%' => $this->ipAddress));
+            }
+        } elseif ($this->isUserReleasedByCookie) {
+            if ($this->failureCountForUserByCookie >= $this->limitPerUserName) {
+                return new UsernameBlockedForCookie("Username '%username%' is blocked for cookie '%cookieToken%'",
+                    array('%username%' => $this->username, '%cookieToken%' => $this->cookieToken));
+            }
+        } else {
+            if ($this->failureCountForIpAddress >= $this->limitBasePerIpAddress) {
+                return new IpAddressBlocked("IP Adress '%ipAddress%' is blocked",
+                    array('%ipAddress%' => $this->ipAddress));
+            }
+            if ($this->failureCountForUserName >= $this->limitPerUserName) {
+                return new UsernameBlocked("Username '%username%' is blocked",
+                    array('%username%' => $this->username));
+            }
+        }
+        return null;
+    }
+
     /**
      * Get a dtFrom value for the creation or update of a RequestCounts record.
      * @param string $dtString DateTime string  
-     * @return DateTime from $dtString ceiled to a whole number of $this->counterDurationInSeconds since UNIX epoch
+     * @return \DateTime from $dtString ceiled to a whole number of $this->counterDurationInSeconds since UNIX epoch
      */
     public function getRequestCountsDt($dtString)
     {
@@ -209,7 +229,7 @@ class TresholdsGovernor {
     }
     
     /** Register that the current login attempt was successfull */
-    public function registerAuthenticationSuccess() 
+    public function registerAuthenticationSuccess()
     {
         //? should we releaseUserNameForIpAddress? And shouldn't that have a shorter effect then release from e-mail?
         //? should we register (some) other failures in the session and release those here? 
@@ -223,12 +243,13 @@ class TresholdsGovernor {
         $this->releaseUserNameForIpAddressAndCookie();
     }
     
-    /** Register that the current login attempt has failed */
-    public function registerAuthenticationFailure() 
+    /** Register that the current login attempt has failed
+     * @param \Metaclass\TresholdsGovernor\Result\Rejection or null if other kind of failure */
+    public function registerAuthenticationFailure(Rejection $rejection=null)
     {
         //SBAL/Query/QueryBuilder::execute does not provide QueryCacheProfile to the connection, so the query will not be cached
         $dateTime = $this->getRequestCountsDt($this->dtString);
-        $this->requestCountsManager->insertOrIncrementFailureCount($dateTime, $this->username, $this->ipAddress, $this->cookieToken);
+        $this->requestCountsManager->insertOrIncrementFailureCount($dateTime, $this->username, $this->ipAddress, $this->cookieToken, $rejection);
     }
     
     /** Release the username from the current request.
@@ -265,9 +286,7 @@ class TresholdsGovernor {
      *  Packing RequestCounts into ones with longer durations has not yet been implemented. */ 
     public function packData() 
     {
-        $usernameLimit = new \DateTime("$this->dtString - $this->blockUsernamesFor");
-        $addressLimit = new \DateTime("$this->dtString - $this->blockIpAddressesFor");
-        $this->requestCountsManager->deleteCountsUntil(min($usernameLimit, $addressLimit));
+        $this->requestCountsManager->deleteCountsUntil($this->getMinBlockingLimit());
         //idea pack RequestCounts to lower granularity for period between both limits
         
         $limit = new \DateTime($this->dtString);
@@ -279,7 +298,13 @@ class TresholdsGovernor {
         }        
         $this->releasesManager->deleteReleasesUntil($limit);
     }
-    
+
+    public function getMinBlockingLimit()
+    {
+        $usernameLimit = new \DateTime("$this->dtString - $this->blockUsernamesFor");
+        $addressLimit = new \DateTime("$this->dtString - $this->blockIpAddressesFor");
+        return min($usernameLimit, $addressLimit);
+    }
 }
 
 ?>

@@ -35,17 +35,20 @@ From your own application:
       `cookieToken` varchar(40) COLLATE utf8_unicode_ci NOT NULL,
       `loginsFailed` int(11) NOT NULL DEFAULT '0',
       `loginsSucceeded` int(11) NOT NULL DEFAULT '0',
+      `ipAddressBlocked` int(11) NOT NULL DEFAULT '0',
+      `usernameBlocked` int(11) NOT NULL DEFAULT '0',
+      `usernameBlockedForIpAddress` int(11) NOT NULL DEFAULT '0',
+      `usernameBlockedForCookie` int(11) NOT NULL DEFAULT '0',
       `requestsAuthorized` int(11) NOT NULL DEFAULT '0',
       `requestsDenied` int(11) NOT NULL DEFAULT '0',
       `userReleasedAt` datetime DEFAULT NULL,
-      `addresReleasedAt` datetime DEFAULT NULL,
+      `addressReleasedAt` datetime DEFAULT NULL,
       `userReleasedForAddressAndCookieAt` datetime DEFAULT NULL,
       PRIMARY KEY (`id`),
       KEY `byDtFrom` (`dtFrom`),
       KEY `byUsername` (`username`,`dtFrom`,`userReleasedAt`),
-      KEY `byAddress` (`ipAddress`,`dtFrom`,`addresReleasedAt`),
-      KEY `byUsernameAndAddress` (`username`,`ipAddress`,`dtFrom`,`userReleasedForAddressAndCookieAt`),
-      KEY `byUsernameAndCookie` (`username`,`cookieToken`,`dtFrom`,`userReleasedForAddressAndCookieAt`),
+      KEY `byAddress` (`ipAddress`,`dtFrom`,`addressReleasedAt`),
+      KEY `byUsernameAndAddress` (`username`,`ipAddress`,`dtFrom`,`userReleasedForAddressAndCookieAt`)
     ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
     CREATE TABLE `secu_releases` (
@@ -79,7 +82,7 @@ From your own application:
     $governor->initFor($ipAddress, $username, $password, ''); //using the last parameter is not yet documented
     $result = $governor->checkAuthentication();
     if ($result !== null) {
-        //$result holds an instance of a subclass of Metaclass\TresholdsGovernor\Result\Rejection
+        //$result holds an instance of a subclass of Metaclass\TresholdsGovernor\Result\AuthenticationBlocked
         //block authentication.
     } else {
         //attempt to authenticate user
@@ -154,7 +157,7 @@ Configurations
 
 	blockIpAddressesFor 
 	
-	The duration for which failed login counters are summed per ip addess. Values like "3 minutes", "12 hours", "5 years" are allowed.
+	The duration for which failed login counters are summed per ip address. Values like "3 minutes", "12 hours", "5 years" are allowed.
 	The actual duration of blocking will be up to 'counterDurationInSeconds' shorter.
 	
 	The OWASP Guide suggests a duration of 15 minutes, but also suggests additional measures that are currenly not supported

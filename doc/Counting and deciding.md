@@ -51,7 +51,7 @@ Releasing
 
 When a username or IP address has become blocked, legimite users may not want to wait until the blocking 
 period has passed. To unblock them the TresholdsGovernor can set the 'userReleasedAt' field in the RequestsCounts 
-records with a username to the DateTime of the release, or the 'addresReleasedAt' field in the records with an IP address. 
+records with a username to the DateTime of the release, or the 'addressReleasedAt' field in the records with an IP address.
 It will only set the released field of RequestCounts whose dtFrom is less then the 'blockUsernamesFor' respectively 
 'blockIpAddressesFor' setting duration ago, and only where the field setted is null.
 

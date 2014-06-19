@@ -1,6 +1,8 @@
 <?php 
 namespace Metaclass\TresholdsGovernor\Manager;
 
+use Metaclass\TresholdsGovernor\Result\Rejection;
+
 /**
  * Instances of classes implementing this interface store and retrieve data and perform counting 
  * about requests. 
@@ -13,14 +15,14 @@ interface RequestCountsManagerInterface
     /**
      * @return int Total number of failures counted for $ipAddress with dtFrom after $timeLimit
      * @param string $ipAddress
-     * @param DateTime $timeLimit
+     * @param \DateTime $timeLimit
      */
     public function countLoginsFailedForIpAddres($ipAddress, \DateTime $timeLimit);
     
     /**
      * @return int Total number of failures counted for $username with dtFrom after $timeLimit
      * @param string $username
-     * @param DateTime $timeLimit
+     * @param \DateTime $timeLimit
      */
     public function countLoginsFailedForUserName($username, \DateTime $timeLimit);
     
@@ -28,15 +30,15 @@ interface RequestCountsManagerInterface
      * @return int Total number of failures counted for $username on $ipAddress with dtFrom after $timeLimit
      * @param string $username
      * @param string $ipAddress
-     * @param DateTime $timeLimit
+     * @param \DateTime $timeLimit
      */
     public function countLoginsFailedForUserOnAddress($username, $ipAddress, \DateTime $timeLimit);
     
     /**
      * @return int Total number of failures counted for $username with $cookieToken and dtFrom after $timeLimit
      * @param string $username
-     * @param string $ipAddress
-     * @param DateTime $timeLimit
+     * @param string $cookieToken
+     * @param \DateTime $timeLimit
      */
     public function countLoginsFailedForUserByCookie($username, $cookieToken, \DateTime $timeLimit);
 
@@ -51,12 +53,14 @@ interface RequestCountsManagerInterface
     
     /**
      * Insert 1 or increment loginsFailed with column values equal to all the corrsponding parameters.
+     * If a Rejection is supplied, also increment the corresponding blocking counter.
      * @param \DateTime $dateTime
      * @param string $username
      * @param string $ipAddress
      * @param string $cookieToken
+     * @param \Metaclass\TresholdsGovernor\Result\Rejection $rejection or null if other kind of failure
      */
-    public function insertOrIncrementFailureCount(\DateTime $dateTime, $username, $ipAddress, $cookieToken);
+    public function insertOrIncrementFailureCount(\DateTime $dateTime, $username, $ipAddress, $cookieToken, Rejection $rejection=null);
     
     /** Release the RequestCounts for $username with dtFrom after $timeLimit 
      * 
@@ -88,7 +92,7 @@ interface RequestCountsManagerInterface
      * with $username and $cookieToken and dtFrom after $timeLimit 
      * 
      * @param string $username
-     * @param string $ipAddress
+     * @param string $cookieToken
      * @param \DateTime $dateTime the date and time of the release
      * @param \DateTime $timeLimit 
      */

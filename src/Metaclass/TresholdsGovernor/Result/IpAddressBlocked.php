@@ -2,7 +2,7 @@
 namespace Metaclass\TresholdsGovernor\Result;
 
 /**
- * An instance of this class reprecents a decision by a TreholdsGovernor to reject a login attempt because 
+ * An instance of this class represents a decision by a TreholdsGovernor to block a login attempt because
  * the IP address that sent it is blocked.
  *  
  * @author Henk Verhoeven
@@ -10,6 +10,9 @@ namespace Metaclass\TresholdsGovernor\Result;
  */
 class IpAddressBlocked extends Rejection
 {
-    
+    public function getCounterName()
+    {
+        return 'ipAddressBlocked';
+    }
 }
 ?>
