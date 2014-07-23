@@ -100,7 +100,10 @@ comitted, pushed.
 -----------------------------------------------------------
 - TresholdsGovernor::packData bug fixed: now uses keepCountsFor parameter,
     now returns array with until when each type of data was deleted
-
+comitted, pushed
 ---------------------------------------------------------
+- DbalGateway::getReleasesIdWhereDateAndUsernameAndIpAddressAndCookie bug fixed: only first character was returned
+comitted and pushed
+---------------------
     (blocked columns and statistics need tests and documentation,
     statistics UI need refactoring from UserBundle)

@@ -363,8 +363,7 @@ class DbalGateway {
                 'ipAddress' => $ipAddress,
                 'cookieToken' => $cookieToken );
         $sql = "SELECT id from secu_releases WHERE username = :username AND ipAddress = :ipAddress AND cookieToken = :cookieToken";
-        $found = $this->getConnection()->fetchColumn($sql, $params);
-        return isSet($found[0]) ? $found[0] : null; 
+        return (int) $this->getConnection()->fetchColumn($sql, $params);
     }
     
     /** 
