@@ -96,8 +96,11 @@ AuthenticationGuardBundle Issue #6 Add a function for clean-up of the RequestCou
     ::insertOrIncrementFailureCount $rejection parameter added
 - DbalGateway::insertOrIncrementCount, ::incrementCountWhereId, ::createRequestCountsWith
     parameter $blockedCounterName added
-comitted, not pushed.
+comitted, pushed.
+-----------------------------------------------------------
+- TresholdsGovernor::packData bug fixed: now uses keepCountsFor parameter,
+    now returns array with until when each type of data was deleted
+
+---------------------------------------------------------
     (blocked columns and statistics need tests and documentation,
     statistics UI need refactoring from UserBundle)
------------------------------------------------------------
-

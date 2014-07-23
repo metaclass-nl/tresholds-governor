@@ -286,10 +286,11 @@ class TresholdsGovernor {
      *  Packing RequestCounts into ones with longer durations has not yet been implemented. */ 
     public function packData() 
     {
-        $this->requestCountsManager->deleteCountsUntil($this->getMinBlockingLimit());
+        $limit = new \DateTime("$this->dtString - $this->keepCountsFor");
+        $this->requestCountsManager->deleteCountsUntil($limit);
+        $result["requestcounts_deleted_until"] = $limit;
         //idea pack RequestCounts to lower granularity for period between both limits
         
-        $limit = new \DateTime($this->dtString);
         if ($this->allowReleasedUserOnAddressFor) {
             $limit = min($limit, new \DateTime("$this->dtString - $this->allowReleasedUserOnAddressFor"));
         }
@@ -297,6 +298,9 @@ class TresholdsGovernor {
             $limit = min($limit, new \DateTime("$this->dtString - $this->allowReleasedUserByCookieFor"));
         }        
         $this->releasesManager->deleteReleasesUntil($limit);
+        $result["releases_deleted_until"] = $limit;
+
+        return $result;
     }
 
     public function getMinBlockingLimit()
