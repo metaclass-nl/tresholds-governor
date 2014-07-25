@@ -202,6 +202,24 @@ Configurations
 	This setting basically says how long this vacation may be and still be allowed to
 	log in because of his user agent.
 	
+8. Garbage collection delay
+
+    keepCountsFor
+
+    For how long the requestcounts will be kept before being garbage-collected. Values like "4 days".
+
+    If you use the AuthenticationGuardBundle and have enabled the user interface for user
+    administrators to look into why a user may have been blocked, this is how long they can
+    look back in time to see what happened.
+
+    This value must allways be set longer then both blockUsernamesFor and blockIpAddressesFor,
+    otherwise counters will be deleted before blocking should end and no longer be counted in
+    for blocking.
+
+    Currently the AuthenticationGuardBundle's user interface shows no information about active releases, but for
+    future extension this value also acts as a minimum for how long releases will be kept before being
+    garbage collected, but if allowReleasedUserOnAddressFor (or allowReleasedUserByCookieFor)
+    is set to a longer duration, the releases will be kept longer (according to the longest one).
 
 Notes
 
