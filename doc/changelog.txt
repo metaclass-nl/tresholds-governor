@@ -107,7 +107,13 @@ comitted and pushed
 ---------------------
 - TresholdsGovernorTest adapted to use of keepCountsFor parameter
 - doc/Installation.md added keepCountsFor parameter to configurations
-comiited, pushed
+committed, pushed
 -------------------
-    (blocked columns and statistics need tests and documentation,
-    statistics UI need refactoring from UserBundle)
+- Added functions for fixed execution times to mitigate timing attacks
+        with parameters and docs
+- Test of DbalGateway added
+- doc/Installation.md added keepCountsFor parameter to configurations
+committed, pushed
+------------------
+(blocked columns and statistics need tests and documentation,
+ statistics UI need refactoring from UserBundle)
