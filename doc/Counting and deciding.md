@@ -92,7 +92,30 @@ Not used: If the user has been released for the cookieToken (but not on the IP a
 made from the same cookieToken. If the total is higher then the  'limitPerUserName' setting, it will throw 
 UsernameBlockedForCookieException. 
 
-All these exceptions inherit from AuthenticationBlockedException. 
+All these exceptions inherit from AuthenticationBlockedException.
+
+Waiting
+-------
+
+Though the actual counting is done by the database, adding up more counters may
+still take more time then when for example no counters exist. If correct user names
+do not have the same frequency as incorrect ones, an attacker may draw conclusions
+from execution time differences.
+
+This can be mitigated by calling ::sleepUntilFixedExecutionTime. This function
+(and the underlying ::sleepUntilSinceInit) will try to sleep until a fixed
+execution time has passed since ::init was called.
+
+Because of doubts about the accurateness of microtime() and to hide system clock
+details a random between 0 and randomSleepingNanosecondsMax nanoseconds is added.
+
+Under high (database) server loads when performance degrades, the fixed execution time
+$seconds may already have passed before ::sleepUntilSinceInit is called.
+Therefore sleeping will be until the next whole multitude of $seconds
+has passed. I.e. if $seconds is 0.9 and one second has passed, sleeping will be
+until 1.8. Generally this will again hide the what the governor (and the database)
+has been doing, but in borderline conditions information may still leak.
+
 
 Improvements
 ------------

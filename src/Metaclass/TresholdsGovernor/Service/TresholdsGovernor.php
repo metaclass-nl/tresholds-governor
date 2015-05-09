@@ -61,8 +61,17 @@ class TresholdsGovernor {
      * past blockings if a user ask questions when he/she can't log in.
      * This setting should never be set lower then $blockUsernamesFor and $blockIpAddressesFor */
     public $keepCountsFor = '4 days';
-    
+
+    /** @var float fixed execution time in order to mitigate timing attacks. To apply, call sleepUntilFixedExecutionTime */
+    public $fixedExecutionSeconds = 0.1;
+
+    /** @var int Maximum random nanoseconds sleeping time  */
+    public $randomSleepingNanosecondsMax = 99999;
+
 //variables
+    /** @var float microtime of init */
+    protected $initMicrotime;
+
     /** @var string $ipAddress IP Address sending the request that is being processed */ 
     protected $ipAddress;
     
@@ -78,7 +87,7 @@ class TresholdsGovernor {
     /** @var int $failureCountForUserName Total number of failures counted by $this->username within the $this->blockUsernamesFor duration */
     protected $failureCountForUserName;
     
-    /** @var boolean $isUserReleasedOnAddress Wheater $this->username has been released for $this->ipAddress within the $this->allowReleasedUserOnAddressFor duration */
+    /** @var boolean $isUserReleasedOnAddress Weather $this->username has been released for $this->ipAddress within the $this->allowReleasedUserOnAddressFor duration */
     public $isUserReleasedOnAddress = false;
     
     /** @var int $failureCountForUserOnAddress Total number of failures counted by the combination of both $this->username and $this->ipAddress within the $this->blockUsernamesFor duration */
@@ -122,7 +131,7 @@ class TresholdsGovernor {
     
     /**
      * Initializes this with the supplied parameters and the counts and booleans calculated with the parameters.
-     * Null paramter values are processed as empty strings.
+     * Null parameter values are processed as empty strings.
      * @param string $ipAddress IP Address sending the request that is being processed
      * @param string $username username from the request that is being processed 
      * @param string $password not used
@@ -130,13 +139,14 @@ class TresholdsGovernor {
      */
     public function initFor($ipAddress, $username, $password, $cookieToken) 
     {
+        $this->initMicrotime = microtime(true);
+
         //cast to string because null is used for control in some Gateway functions
         $this->ipAddress = (string) $ipAddress;
         $this->username = (string) $username;
         $this->cookieToken = (string) $cookieToken; 
         //$this->password = (string) $password;
-        
-        
+
         $timeLimit = new \DateTime("$this->dtString - $this->blockIpAddressesFor");
         $this->failureCountForIpAddress  = $this->requestCountsManager->countLoginsFailedForIpAddres($ipAddress, $timeLimit);
 
@@ -159,8 +169,8 @@ class TresholdsGovernor {
     }
 
     /**
-     * Decides wheather or not to block the current request amd registers failure on blocking
-     * @param boolean $justFailed Wheather the login has already failed (for reasons external to this governor) 
+     * Decides wheater or not to block the current request amd registers failure on blocking
+     * @param boolean $justFailed Wheater the login has already failed (for reasons external to this governor)
      *     but is not yet registered as a failure. Default is false.
      * @return  \Metaclass\TresholdsGovernor\Result\Rejection or null if the governor does not require the login to be blocked.
      *   (Blocking may still take place for reasons external to this governor)
@@ -183,7 +193,7 @@ class TresholdsGovernor {
     }
 
     /**
-     * Decides wheather or not to block the current request.
+     * Decides wheater or not to block the current request.
      * @param boolean $justFailed Wheather the login has already failed (for reasons external to this governor)
      *     but is not yet registered as a failure. Default is false.
      * @return  \Metaclass\TresholdsGovernor\Result\Rejection or null if the governor does not require the login to be blocked.
@@ -308,6 +318,57 @@ class TresholdsGovernor {
         $usernameLimit = new \DateTime("$this->dtString - $this->blockUsernamesFor");
         $addressLimit = new \DateTime("$this->dtString - $this->blockIpAddressesFor");
         return min($usernameLimit, $addressLimit);
+    }
+
+    /** @return float seconds that have passed since init was called,
+     * accurate to microseconds */
+    public function getSecondsPassedSinceInit()
+    {
+        return microtime(true) - $this->initMicrotime;
+    }
+
+    /** Function to reach fixed execution time in order to mitigate timing attacks.
+     * Because of doubts about the accurateness of microtime() and to hide system clock details
+     * a random between 0 and randomSleepingNanosecondsMax nanoseconds is added.
+     * Because the time <until> may in fact be in the past, sleeping will be
+     * until next whole multitude of $seconds has passed. I.e. if $seconds is
+     * 0.9 and one second has passed, sleeping will be until 1.8
+     * @param float $seconds since ::init until when to sleep
+     */
+    public function sleepUntilSinceInit($seconds)
+    {
+        $passed = $this->getSecondsPassedSinceInit();
+        $multiplier = ceil($passed/$seconds);
+        $multitude = $multiplier * $seconds;
+        $toSleep = $multitude - $passed;
+        $wholeSeconds = floor($toSleep);
+        $nanoSeconds = round(($toSleep - $wholeSeconds) * 1000000000);
+
+        // Add random nanoseconds sleeping time
+        $nanoSeconds += mt_rand(0, $this->randomSleepingNanosecondsMax);
+        if ($nanoSeconds > 1000000000) {
+            $nanoSeconds -= 1000000000;
+            $wholeSeconds++;
+        }
+
+        do {
+            $result = time_nanosleep($wholeSeconds, $nanoSeconds);
+            if (is_array($result)) {
+                $wholeSeconds = $result['seconds'];
+                $nanoSeconds = $result['nanoseconds'];
+            }
+        } while (is_array($result));
+    }
+
+    /**
+     * Function to reach fixed execution time of the tresholds governor in order to
+     * mitigate timing attacks. Typically used if authentication is blocked.
+     * If authentication really takes place, more time will be needed because
+     * of password hashing. Then ::sleepUntilSinceInit may be used with a custom value.
+     */
+    public function sleepUntilFixedExecutionTime()
+    {
+        $this->sleepUntilSinceInit($this->fixedExecutionSeconds);
     }
 }
 

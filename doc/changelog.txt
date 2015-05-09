@@ -107,6 +107,7 @@ comitted and pushed
 ---------------------
 - TresholdsGovernorTest adapted to use of keepCountsFor parameter
 - doc/Installation.md added keepCountsFor parameter to configurations
+comiited, pushed
 -------------------
     (blocked columns and statistics need tests and documentation,
     statistics UI need refactoring from UserBundle)

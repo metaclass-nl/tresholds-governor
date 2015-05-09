@@ -112,7 +112,9 @@ From your own application:
         'blockIpAddressesFor' => "17 minutes",   // actual blocking for up to counterDurationInSeconds shorter!
         'limitBasePerIpAddress' => 10,
         'releaseUserOnLoginSuccess' => false,
-        'allowReleasedUserOnAddressFor' => "30 days" );
+        'allowReleasedUserOnAddressFor' => "30 days",
+        'keepCountsFor' => '4 days',
+        'fixedExecutionSeconds' => 0.1);
 ```
   
 Configurations
@@ -220,6 +222,20 @@ Configurations
     future extension this value also acts as a minimum for how long releases will be kept before being
     garbage collected, but if allowReleasedUserOnAddressFor (or allowReleasedUserByCookieFor)
     is set to a longer duration, the releases will be kept longer (according to the longest one).
+
+9. Fixed execution time
+
+    fixedExecutionSeconds
+
+    Fixed execution time in order to mitigate timing attacks. To apply, call ::sleepUntilFixedExecutionTime.
+
+10. Maximum random sleeping time in nanoseconds
+
+    randomSleepingNanosecondsMax
+
+    Because of doubts about the accurateness of microtime() and to hide system clock
+    details a random between 0 and this value is added by ::sleepUntilSinceInit (which
+    is called by ::sleepUntilFixedExecutionTime).
 
 Notes
 

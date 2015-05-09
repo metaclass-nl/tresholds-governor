@@ -1,4 +1,6 @@
-<?php 
+<?php
+//copyright (c) MetaClass Groningen 2014
+
 namespace Metaclass\TresholdsGovernor\Tests\Service;
 
 use Metaclass\TresholdsGovernor\Service\TresholdsGovernor;

@@ -38,8 +38,12 @@ RELEASE NOTES
 
 This is a pre-release version under development. 
 
-May be vurnerable to user enumeration through timing attacks because of differences in database query performance 
-for frequently and infrequently used usernames,
+May be vurnerable to enumeration of usernames through timing attacks because of
+differences in database query performance for frequently and infrequently used usernames.
+This can be mitigated by calling ::sleepUntilFixedExecutionTime. Under normal circomstances
+that should be sufficient if the fixedExecutionSeconds is set long enough, but under
+high (database) server loads when performance degrades, under specific conditons
+information may still be extractable by timing.
 
 DOCUMENTATION
 -------------
