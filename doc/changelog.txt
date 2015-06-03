@@ -113,7 +113,7 @@ committed, pushed
         with parameters and docs
 - Test of DbalGateway added
 - doc/Installation.md added keepCountsFor parameter to configurations
-committed, pushed
+committed, pushed, v0.2
 ------------------
 (blocked columns and statistics need tests and documentation,
  statistics UI need refactoring from UserBundle)
