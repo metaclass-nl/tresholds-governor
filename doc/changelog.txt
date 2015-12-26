@@ -115,5 +115,8 @@ committed, pushed
 - doc/Installation.md added keepCountsFor parameter to configurations
 committed, pushed, v0.2
 ------------------
+AuthenticationGuardBundle Issue 14: Symfony / Doctrine Compatibility
+- composer.json now requires DBAL >=2.3.4
+-------------------------------------------
 (blocked columns and statistics need tests and documentation,
- statistics UI need refactoring from UserBundle)
+statistics need Interface and api docs)
