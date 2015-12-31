@@ -117,6 +117,10 @@ committed, pushed, v0.2
 ------------------
 AuthenticationGuardBundle Issue 14: Symfony / Doctrine Compatibility
 - composer.json now requires DBAL >=2.3.4
+committed, published
 -------------------------------------------
+- .gitignore added .idea
+
+---------------------------------
 (blocked columns and statistics need tests and documentation,
 statistics need Interface and api docs)
