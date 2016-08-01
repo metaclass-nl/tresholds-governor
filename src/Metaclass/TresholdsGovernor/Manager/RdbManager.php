@@ -10,7 +10,7 @@ use Metaclass\TresholdsGovernor\Result\Rejection;
  * @author Henk Verhoeven
  * @copyright 2014 MetaClass Groningen 
  */
-class RdbManager implements ReleasesManagerInterface,  RequestCountsManagerInterface
+class RdbManager implements ReleasesManagerInterface,  RequestCountsManagerInterface, StatisticsManagerInterface
 {
     
     /** @var \Metaclass\TresholdsGovernor\Gateway\RdbGateway */
@@ -97,42 +97,44 @@ class RdbManager implements ReleasesManagerInterface,  RequestCountsManagerInter
         $this->gateway->deleteCountsUntil($limit);
     }
 
-//Statistics
+//StatisticsManagerInterface
+
+    /** {@inheritdoc} */
     public function countLoginsFailed( \DateTime $timeLimit)
     {
         return $this->gateway->countWhereSpecifiedAfter('loginsFailed', null, null, null, $timeLimit);
     }
-
+    /** {@inheritdoc} */
     public function countLoginsSucceeded( \DateTime $timeLimit)
     {
         return $this->gateway->countWhereSpecifiedAfter('loginsSucceeded', null, null, null, $timeLimit);
     }
 
+    /** {@inheritdoc} */
     public function countLoginsSucceededForUserName($username, \DateTime $timeLimit)
     {
         return $this->gateway->countWhereSpecifiedAfter('loginsSucceeded', $username, null, null, $timeLimit);
     }
 
+    /** {@inheritdoc} */
     public function countsGroupedByIpAddress(\DateTime $limitFrom, \DateTime $limitUntil=null, $username=null)
     {
         return $this->gateway->countsGroupedByIpAddress($limitFrom, $limitUntil, $username);
     }
 
+    /** {@inheritdoc} */
     public function countsByUsernameBetween($username, \DateTime $limitFrom, \DateTime $limitUntil)
     {
         return $this->gateway->countsBetween($limitFrom, $limitUntil, $username);
     }
 
+    /** {@inheritdoc} */
     public function countsByAddressBetween($ipAddress, \DateTime $limitFrom, \DateTime $limitUntil)
     {
         return $this->gateway->countsBetween($limitFrom, $limitUntil, null, $ipAddress);
     }
 
-    public function totalAndBlockedAddresses(\DateTime $timeLimit, $failureLimit)
-    {
-        return $this->gateway->totalAndBlockedAddresses($timeLimit, $failureLimit);
-    }
-
+    /** {@inheritdoc} */
     public function countAddressesBlocked(\DateTime $timeLimit, $failureLimit)
     {
         return $this->gateway->countAddressesBlocked($timeLimit, $failureLimit);

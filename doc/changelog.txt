@@ -120,7 +120,14 @@ AuthenticationGuardBundle Issue 14: Symfony / Doctrine Compatibility
 committed, published
 -------------------------------------------
 - .gitignore added .idea
-
+comitted
 ---------------------------------
+Merge pull request #7 from stof/patch-1
+- Use a bound composer constraint
+-----------------------------------
+#5 api docs for statistics functions
+- Added api docs to DbalGateway
+- Added StatisticsManagerInterface, with api docs
+
 (blocked columns and statistics need tests and documentation,
 statistics need Interface and api docs)

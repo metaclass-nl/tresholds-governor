@@ -242,8 +242,25 @@ class DbalGateway {
         $qb->execute();
     }
 
-//Statistics
+// Statistics
 
+    /** Selects counts grouped by `ipAdress` that have not been released
+     * with `dtFrom` after or equal to $limitFrom AND as far as specified
+     * `dtFrom` before $limitUntil, `username` equals specified,
+     * in ascenting order of `ipAdress`
+     * Counts are:
+     *   count(distinct(r.username)) as usernames,
+     *   sum(r.loginsSucceeded) as loginsSucceeded,
+     *   sum(r.loginsFailed) as loginsFailed,
+     *   sum(r.ipAddressBlocked) as ipAddressBlocked,
+     *   sum(r.usernameBlocked) as usernameBlocked,
+     *   sum(r.usernameBlockedForIpAddress) as usernameBlockedForIpAddress,
+     *   sum(r.usernameBlockedForCookie) as usernameBlockedForCookie.
+     * @param \DateTime $limitFrom
+     * @param \DateTime|null $limitUntil
+     * @param string|null $username
+     * @return array of array each with ip address and its counts
+     */
     public function countsGroupedByIpAddress(\DateTime $limitFrom, \DateTime $limitUntil=null, $username=null)
     {
         $params = array($limitFrom->format('Y-m-d H:i:s'));
@@ -274,6 +291,16 @@ class DbalGateway {
         return $conn->fetchAll($sql, $params);
     }
 
+    /** Selects Counts that have not been released
+     * with `dtFrom` after or erual to $limitFrom AND before $limitUntil,
+     * and as far as specified, `username` and `ipAddress' equals specified,
+     * ordered by `dtFrom`.
+     * @param \DateTime $limitFrom
+     * @param \DateTime $limitUntil
+     * @param string|null $username
+     * @param string|null $ipAddress
+     * @return array of arrays, each with values for all column of `secu_requests`
+     */
     public function countsBetween(\DateTime $limitFrom, \DateTime $limitUntil, $username=null, $ipAddress=null)
     {
         $params = array($limitFrom->format('Y-m-d H:i:s'), $limitUntil->format('Y-m-d H:i:s'));
@@ -306,7 +333,15 @@ class DbalGateway {
         return $conn->fetchAll($sql, array($timeLimit->format('Y-m-d H:i:s')));
     }
 
-    //werkt misschien niet correct
+    /** Not used
+     * Counts ip adresses that have not been released and have been blocked,
+     * i.e. failed a number of times that is over the specified failure limit,
+     *  with `dtFrom` after of equal to $failureLimit
+     *
+     * @param \DateTime $timeLimit
+     * @param int $failureLimit
+     * @return int
+     */
     public function countAddressesBlocked(\DateTime $timeLimit, $failureLimit)
     {
         $sql = "SELECT count(r.ipAddress) as blocked
@@ -317,8 +352,8 @@ class DbalGateway {
         ";
 
         $conn = $this->getConnection();
-        return $conn->fetchAll( $sql, array($timeLimit->format('Y-m-d H:i:s'), $failureLimit) );
-
+        $found = $conn->fetchAll( $sql, array($timeLimit->format('Y-m-d H:i:s'), $failureLimit) );
+        return isset($found['blocked']) ? $found['blocked'] : 0;
     }
 
 
