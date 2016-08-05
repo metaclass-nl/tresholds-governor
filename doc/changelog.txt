@@ -128,6 +128,12 @@ Merge pull request #7 from stof/patch-1
 #5 api docs for statistics functions
 - Added api docs to DbalGateway
 - Added StatisticsManagerInterface, with api docs
-
-(blocked columns and statistics need tests and documentation,
-statistics need Interface and api docs)
+---------------------------------------
+#2 support several rdb access interfaces
+- Completed DbalGatewayTest
+- DbalGateway::deleteReleasesUntil, ::deleteCountsUntil removed unnecessary exception
+    ::updateCountsColumnWhereColumnNullAfterSupplied corrected exception namespace
+AuthenticationGuardBundle Issue 9: cross framework library refactoring
+- Added Tests\Service\FunctionalTest, based on \Metaclass\AuthenticationGuardBundle\Tests\Service\TresholdsGovernorTest
+- Made DbalGateway::updateCountsColumnWhereColumnNullAfterSupplied compatible with sqlite
+------------------------------------------

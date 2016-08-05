@@ -13,18 +13,21 @@ use Metaclass\TresholdsGovernor\Result\UsernameBlockedForIpAddress;
 
 use Metaclass\TresholdsGovernor\Tests\Mock\MockGateway;
 
-/** Requires injection of properly initialized TresholdsGovernor
- * */
-class TresholdsGovernorTest extends \PHPUnit_Framework_TestCase 
+class TresholdsGovernorTest extends \PHPUnit_Framework_TestCase
 {
-    
+    public $governor;
+
     function setup() 
     {
 	    $this->governor = new TresholdsGovernor(array());
+
         $this->governor->dtString = '1980-07-01 00:00:00';
         $this->governor->counterDurationInSeconds = 300; //5 minutes
+        $this->governor->blockUsernamesFor = '30 days';
+        $this->governor->blockIpAddressesFor = '30 days'; //not very realistic, but should still work
         $this->governor->allowReleasedUserOnAddressFor = '30 days';
         $this->governor->allowReleasedUserByCookieFor =  '10 days';
+
     }
     
     protected function get($propName)

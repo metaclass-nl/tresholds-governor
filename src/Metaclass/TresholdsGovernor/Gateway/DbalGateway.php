@@ -200,26 +200,26 @@ class DbalGateway {
      */
     public function updateCountsColumnWhereColumnNullAfterSupplied($columnToUpdate, \DateTime $value, \DateTime $dtLimit, $username, $ipAddress, $cookieToken) {
         if ($username === null && $ipAddress == null) {
-            throw new BadFunctionCallException ('At least one of username and ip address must be supplied');
+            throw new \BadFunctionCallException ('At least one of username and ip address must be supplied');
         }
         $conn = $this->getConnection();
         $qb = $conn->createQueryBuilder();
-        $qb->update('secu_requests', 'r')
+        $qb->update('secu_requests')
             ->set($columnToUpdate, ':value')
             ->setParameter('value', $value->format('Y-m-d H:i:s'))
             ->where("$columnToUpdate IS NULL")
-            ->andWhere("r.dtFrom > :dtLimit")
+            ->andWhere("dtFrom > :dtLimit")
             ->setParameter('dtLimit', $dtLimit->format('Y-m-d H:i:s'));
         if ($username !== null) {
-            $qb->andWhere("r.username = :username")
+            $qb->andWhere("username = :username")
                 ->setParameter('username', $username);
         }
         if ($ipAddress != null) {
-            $qb->andWhere("r.ipAddress = :ipAddress")
+            $qb->andWhere("ipAddress = :ipAddress")
                 ->setParameter('ipAddress', $ipAddress);
         }
         if ($cookieToken !== null) {
-            $qb->andWhere("r.cookieToken = :token")
+            $qb->andWhere("cookieToken = :token")
                 ->setParameter('token', $cookieToken);
         }
         $qb->execute();
@@ -231,9 +231,6 @@ class DbalGateway {
      */
     public function deleteCountsUntil(\DateTime $dtLimit) 
     {
-        if (!$dtLimit) {
-            throw new \Exception('DateTime limit must be specified');
-        }
         $conn = $this->getConnection();
         $qb = $conn->createQueryBuilder();
         $qb->delete('secu_requests')
@@ -322,7 +319,7 @@ class DbalGateway {
         return $conn->fetchAll($sql, $params);
     }
 
-    //not used
+    //not used, not tested
     public function countColumn($column, \DateTime $timeLimit)
     {
         $sql = "SELECT count(r.$column) as total,
@@ -333,7 +330,7 @@ class DbalGateway {
         return $conn->fetchAll($sql, array($timeLimit->format('Y-m-d H:i:s')));
     }
 
-    /** Not used
+    /** Not used, not tested
      * Counts ip adresses that have not been released and have been blocked,
      * i.e. failed a number of times that is over the specified failure limit,
      *  with `dtFrom` after of equal to $failureLimit
@@ -477,9 +474,6 @@ class DbalGateway {
      */
     public function deleteReleasesUntil(\DateTime $dtLimit) 
     {
-        if (!$dtLimit) {
-            throw new \Exception('DateTime limit must be specified');
-        }
         $conn = $this->getConnection();
         $qb = $conn->createQueryBuilder();
         $qb->delete('secu_releases')
