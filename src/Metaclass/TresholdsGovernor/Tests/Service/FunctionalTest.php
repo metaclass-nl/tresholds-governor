@@ -23,15 +23,15 @@ class FunctionalTest extends \PHPUnit_Framework_TestCase
     function setup()
     {
         if (!isSet(self::$connection)) {
-            self::$connection = DriverManager::getConnection([
+            self::$connection = DriverManager::getConnection(array(
                 'memory ' => true,
                 'driver' => 'pdo_sqlite',
-            ]);
+            ));
             DbalGatewayTest::$connection = self::$connection;
             DbalGatewayTest::createTables();
         }
         $gateway = new DbalGateway(self::$connection);
-        $this->governor = new TresholdsGovernor([], new RdbManager($gateway));
+        $this->governor = new TresholdsGovernor(array(), new RdbManager($gateway));
 
         $this->governor->dtString = '1980-07-01 00:00:00';
         $this->governor->counterDurationInSeconds = 300; //5 minutes

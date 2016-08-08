@@ -137,3 +137,10 @@ AuthenticationGuardBundle Issue 9: cross framework library refactoring
 - Added Tests\Service\FunctionalTest, based on \Metaclass\AuthenticationGuardBundle\Tests\Service\TresholdsGovernorTest
 - Made DbalGateway::updateCountsColumnWhereColumnNullAfterSupplied compatible with sqlite
 ------------------------------------------
+#2 support several rdb access interfaces
+- Added Connection\PDOConnection, PDOException
+- Adapted DbalGateway and DbalGatewayTest to PDOConnection
+- Factored out RdbGatewayTest
+AuthenticationGuardBundle Issue 9: cross framework library refactoring
+- Adapted FunctionalTest to PHP 5.3 (not tested)
+----------------------------------------

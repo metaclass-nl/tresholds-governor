@@ -42,27 +42,24 @@ class DbalGateway {
      */
     public function countWhereSpecifiedAfter($counterColumn, $username, $ipAddress, $cookieToken, \DateTime $dtLimit, $releaseColumn=null)
     {
-        $qb = $this->getConnection()->createQueryBuilder();
-        $qb->select("sum(r.$counterColumn)")
-            ->from('secu_requests', 'r')
-            ->where("r.dtFrom > :dtLimit")
-            ->setParameter('dtLimit', $dtLimit->format('Y-m-d H:i:s'));
+        $sql = "SELECT sum(r.$counterColumn) FROM secu_requests r WHERE (r.dtFrom > :dtLimit)";
+        $params = array('dtLimit' => $dtLimit->format('Y-m-d H:i:s'));
         if ($username !== null) {
-            $qb->andWhere("r.username = :username")
-                ->setParameter('username', $username);
+            $sql .= ' AND (r.username = :username)';
+            $params['username'] = $username;
         }
         if ($ipAddress !== null) {
-            $qb->andWhere("r.ipAddress = :ipAddress")
-                ->setParameter('ipAddress', $ipAddress);
+            $sql .= ' AND (r.ipAddress = :ipAddress)';
+            $params['ipAddress'] = $ipAddress;
         }
         if ($cookieToken !== null) {
-            $qb->andWhere("r.cookieToken = :token")
-                ->setParameter('token', $cookieToken);
+            $sql .= ' AND (r.cookieToken = :token)';
+            $params['token'] = $cookieToken;
         }
         if ($releaseColumn !== null) {
-            $qb->andWhere("$releaseColumn IS NULL");
+            $sql .= " AND ($releaseColumn IS NULL)";
         }
-        return (int) $qb->execute()->fetchColumn();
+        return (int) $this->getConnection()->executeQuery($sql, $params)->fetchColumn();
     }
 
     /**
@@ -102,15 +99,24 @@ class DbalGateway {
      * @param string $cookieToken
      */
     protected function getCountsIdWhereDateAndUsernameAndIpAddressAndCookie(\DateTime $dateTime, $username, $ipAddress, $cookieToken) {
-        $conn = $this->getConnection();
-        $qb = $conn->createQueryBuilder();
-        $qb->select('r.id')
-            ->from('secu_requests', 'r');
-        $this->qbWhereDateAndUsernameAndIpAddressAndCookie($qb, $dateTime, $username, $ipAddress, $cookieToken);
-        return $qb->execute()->fetchColumn();
+        $sql = 'SELECT r.id FROM secu_requests r
+    WHERE (r.username = :username)
+    AND (r.ipAddress = :ipAddress)
+    AND (r.dtFrom = :dtFrom)
+    AND (r.cookieToken = :token)
+    AND (addressReleasedAt IS NULL)
+    AND (userReleasedAt IS NULL)
+    AND (userReleasedForAddressAndCookieAt IS NULL)';
+        $params = array(
+            'username' => $username,
+            'ipAddress' => $ipAddress,
+            'dtFrom' => $dateTime->format('Y-m-d H:i:s'),
+            'token' => $cookieToken,
+        );
+        return $this->getConnection()->executeQuery($sql, $params)->fetchColumn();
     }
-    
-    /** Increment RequestCounts $columnToUpdate where id = $id 
+
+    /** Increment RequestCounts $columnToUpdate where id = $id
      * 
      * WARNING: Supply literal string or well-validated vale for $columnToUpdate to prevent SQL injection!
      * 
@@ -121,14 +127,13 @@ class DbalGateway {
      */
     protected function incrementCountWhereId($columnToUpdate, $id, $blockedCounterName=null)
     {
-        $conn = $this->getConnection();
         $params = array('id' => $id);
         $sql = "UPDATE secu_requests SET $columnToUpdate = $columnToUpdate + 1";
         if ($blockedCounterName !== null) {
             $sql .= ", $blockedCounterName = $blockedCounterName + 1";
         }
         $sql .= " WHERE id = :id";
-        $conn->executeUpdate($sql, $params);
+        $this->getConnection()->executeQuery($sql, $params);
     }
     
     /**
@@ -147,7 +152,6 @@ class DbalGateway {
      */
     protected function createRequestCountsWith($datetime, $ipAddress, $username, $cookieToken, $counter, $blockedCounterName=null)
     {
-        $conn = $this->getConnection();
         $params = array(
             'dtFrom' => $datetime->format('Y-m-d H:i:s'),
             'username' => $username,
@@ -157,33 +161,10 @@ class DbalGateway {
         $columns = implode(', ', array_keys($params));
         $values = ':'. implode(', :', array_keys($params));
         $sql = "INSERT INTO secu_requests ($columns) VALUES ($values)";
-        $conn->executeUpdate($sql, $params);
+
+        $this->getConnection()->executeQuery($sql, $params);
     }
 
-    /**
-     * Add WHERE clause and parameters to $qb for dtFrom = $dateTime AND all release columns are NULL 
-     * AND username = $username AND ipAddress = $ipAddress AND cookieToken = $cookieToken
-     * @param QueryBuilder $qb
-     * @param \DateTime $dateTime
-     * @param string $username
-     * @param string $ipAddress
-     * @param string $cookieToken
-     */
-    protected function qbWhereDateAndUsernameAndIpAddressAndCookie($qb, $dateTime, $username, $ipAddress, $cookieToken) {
-        $qb->where('r.username = :username')
-            ->andWhere('r.ipAddress = :ipAddress')
-            ->andWhere('r.dtFrom = :dtFrom')
-            ->andWhere('r.cookieToken = :token')
-            ->andWhere("addressReleasedAt IS NULL")
-            ->andWhere("userReleasedAt IS NULL")
-            ->andWhere("userReleasedForAddressAndCookieAt IS NULL")
-            ->setParameter('username', $username)
-            ->setParameter('ipAddress', $ipAddress)
-            ->setParameter('dtFrom', $dateTime->format('Y-m-d H:i:s') )
-            ->setParameter('token', $cookieToken);
-            ;
-    }
-    
     /**
      * Set Requestcounts $columnToUpdate to $value where $columnToUpdate is null AND dtFrom > $dtLimit
      * AND as far as specified username, ipAddress and cookieToken equal to specified.
@@ -202,27 +183,27 @@ class DbalGateway {
         if ($username === null && $ipAddress == null) {
             throw new \BadFunctionCallException ('At least one of username and ip address must be supplied');
         }
-        $conn = $this->getConnection();
-        $qb = $conn->createQueryBuilder();
-        $qb->update('secu_requests')
-            ->set($columnToUpdate, ':value')
-            ->setParameter('value', $value->format('Y-m-d H:i:s'))
-            ->where("$columnToUpdate IS NULL")
-            ->andWhere("dtFrom > :dtLimit")
-            ->setParameter('dtLimit', $dtLimit->format('Y-m-d H:i:s'));
+        $sql = "UPDATE secu_requests
+    SET $columnToUpdate = :value
+    WHERE (userReleasedForAddressAndCookieAt IS NULL)
+    AND (dtFrom > :dtLimit)";
+        $params = array(
+            'value' => $value->format('Y-m-d H:i:s'),
+            'dtLimit' => $dtLimit->format('Y-m-d H:i:s'),
+        );
         if ($username !== null) {
-            $qb->andWhere("username = :username")
-                ->setParameter('username', $username);
+            $sql .= ' AND (username = :username)';
+            $params['username'] = $username;
         }
         if ($ipAddress != null) {
-            $qb->andWhere("ipAddress = :ipAddress")
-                ->setParameter('ipAddress', $ipAddress);
+            $sql .= ' AND (ipAddress = :ipAddress)';
+            $params['ipAddress'] = $ipAddress;
         }
         if ($cookieToken !== null) {
-            $qb->andWhere("cookieToken = :token")
-                ->setParameter('token', $cookieToken);
+            $sql .= ' AND (cookieToken = :token)';
+            $params['token'] = $cookieToken;
         }
-        $qb->execute();
+        $this->getConnection()->executeQuery($sql, $params);
     }
     
     /**
@@ -231,12 +212,9 @@ class DbalGateway {
      */
     public function deleteCountsUntil(\DateTime $dtLimit) 
     {
-        $conn = $this->getConnection();
-        $qb = $conn->createQueryBuilder();
-        $qb->delete('secu_requests')
-        ->where("dtFrom < :dtLimit")
-        ->setParameter('dtLimit', $dtLimit->format('Y-m-d H:i:s'));
-        $qb->execute();
+        $sql = 'DELETE FROM secu_requests WHERE dtFrom < :dtLimit';
+        $params = array('dtLimit' => $dtLimit->format('Y-m-d H:i:s'));
+        $this->getConnection()->executeQuery($sql, $params);
     }
 
 // Statistics
@@ -284,8 +262,11 @@ class DbalGateway {
             ORDER BY r.ipAddress
             LIMIT 200";
 
-        $conn = $this->getConnection();
-        return $conn->fetchAll($sql, $params);
+        $stmt = $this->getConnection()->executeQuery($sql, $params);
+        $result = $stmt->fetchAll();
+        $stmt->closeCursor();
+
+        return $result;
     }
 
     /** Selects Counts that have not been released
@@ -315,8 +296,10 @@ class DbalGateway {
             ORDER BY r.dtFrom DESC
             LIMIT 500";
 
-        $conn = $this->getConnection();
-        return $conn->fetchAll($sql, $params);
+        $stmt = $this->getConnection()->executeQuery($sql, $params);
+        $result = $stmt->fetchAll();
+        $stmt->closeCursor();
+        return $result;
     }
 
     //not used, not tested
@@ -395,7 +378,7 @@ class DbalGateway {
                 'ipAddress' => $ipAddress,
                 'cookieToken' => $cookieToken );
         $sql = "SELECT id from secu_releases WHERE username = :username AND ipAddress = :ipAddress AND cookieToken = :cookieToken";
-        return (int) $this->getConnection()->fetchColumn($sql, $params);
+        return (int) $this->getConnection()->executeQuery($sql, $params)->fetchColumn();
     }
     
     /** 
@@ -416,7 +399,7 @@ class DbalGateway {
         $columns = implode(', ', array_keys($params));
         $values = ':'. implode(', :', array_keys($params));
         $sql = "INSERT INTO secu_releases ($columns) VALUES ($values)";
-        $this->getConnection()->executeUpdate($sql, $params);
+        $this->getConnection()->executeQuery($sql, $params);
     }
     
     /** 
@@ -431,7 +414,7 @@ class DbalGateway {
             'releasedAt' => $datetime->format('Y-m-d H:i:s'),
             'id' => $id );
         $sql = "UPDATE secu_releases SET releasedAt = :releasedAt WHERE id = :id";
-        $this->getConnection()->executeUpdate($sql, $params);
+        $this->getConnection()->executeQuery($sql, $params);
     }
     
     /** 
@@ -446,9 +429,8 @@ class DbalGateway {
         FROM secu_releases r
         WHERE r.releasedAt >= ?
                 AND r.username = ? AND r.ipAddress = ? ";
-    
-        $conn = $this->getConnection();
-        return (boolean) $conn->fetchColumn($sql, array($releaseLimit->format('Y-m-d H:i:s'), $username, $ipAddess));
+        $params = array($releaseLimit->format('Y-m-d H:i:s'), $username, $ipAddess);
+        return (boolean) $this->getConnection()->executeQuery($sql, $params)->fetchColumn();
     }
     
     /** 
@@ -463,9 +445,9 @@ class DbalGateway {
         FROM secu_releases r
         WHERE r.releasedAt >= ?
                 AND r.username = ? AND r.cookieToken = ? ";
-    
+        $params = array($releaseLimit->format('Y-m-d H:i:s'), $username, $cookieToken);
         $conn = $this->getConnection();
-        return (boolean) $conn->fetchColumn($sql, array($releaseLimit->format('Y-m-d H:i:s'), $username, $cookieToken));
+        return (boolean) $this->getConnection()->executeQuery($sql, $params)->fetchColumn();
     }
     
     /**
@@ -474,12 +456,10 @@ class DbalGateway {
      */
     public function deleteReleasesUntil(\DateTime $dtLimit) 
     {
-        $conn = $this->getConnection();
-        $qb = $conn->createQueryBuilder();
-        $qb->delete('secu_releases')
-            ->where("releasedAt < :dtLimit")
-            ->setParameter('dtLimit', $dtLimit->format('Y-m-d H:i:s'));
-        $qb->execute();
+        $sql = 'DELETE FROM secu_releases WHERE releasedAt < :dtLimit';
+        $params = array('dtLimit' => $dtLimit->format('Y-m-d H:i:s'));
+
+        $this->getConnection()->executeQuery($sql, $params);
     }
 }
 
