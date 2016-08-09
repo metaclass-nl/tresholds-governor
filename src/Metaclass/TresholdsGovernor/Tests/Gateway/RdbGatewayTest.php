@@ -3,7 +3,7 @@
 
 namespace Metaclass\TresholdsGovernor\Tests\Gateway;
 
-use Metaclass\TresholdsGovernor\Gateway\DbalGateway;
+use Metaclass\TresholdsGovernor\Gateway\RdbGateway;
 use \Metaclass\TresholdsGovernor\Tests\Mock\RecordingWrapper;
 
 class RdbGatewayTest extends \PHPUnit_Framework_TestCase
@@ -19,7 +19,7 @@ class RdbGatewayTest extends \PHPUnit_Framework_TestCase
             self::createTables();
         }
         $this->wrapper = new RecordingWrapper(self::$connection);
-        $this->gateway = new DbalGateway($this->wrapper);
+        $this->gateway = new RdbGateway($this->wrapper);
 
         $this->requestData1 = array(
             'dtFrom' => '2001-08-12 15:33:08',
@@ -52,11 +52,11 @@ class RdbGatewayTest extends \PHPUnit_Framework_TestCase
       `userReleasedForAddressAndCookieAt` datetime DEFAULT NULL
     ) ;
 ";
-        self::$connection ->executeUpdate($sql);
-        self::$connection ->executeUpdate("CREATE INDEX `byDtFrom` ON secu_requests(`dtFrom`)");
-        self::$connection ->executeUpdate("CREATE INDEX `byUsername` ON secu_requests(`username`,`dtFrom`,`userReleasedAt`)");
-        self::$connection ->executeUpdate("CREATE INDEX `byAddress` ON secu_requests(`ipAddress`,`dtFrom`,`addressReleasedAt`)");
-        self::$connection ->executeUpdate("CREATE INDEX `byUsernameAndAddress` ON secu_requests(`username`,`ipAddress`,`dtFrom`,`userReleasedForAddressAndCookieAt`)");
+        self::$connection ->executeQuery($sql);
+        self::$connection ->executeQuery("CREATE INDEX `byDtFrom` ON secu_requests(`dtFrom`)");
+        self::$connection ->executeQuery("CREATE INDEX `byUsername` ON secu_requests(`username`,`dtFrom`,`userReleasedAt`)");
+        self::$connection ->executeQuery("CREATE INDEX `byAddress` ON secu_requests(`ipAddress`,`dtFrom`,`addressReleasedAt`)");
+        self::$connection ->executeQuery("CREATE INDEX `byUsernameAndAddress` ON secu_requests(`username`,`ipAddress`,`dtFrom`,`userReleasedForAddressAndCookieAt`)");
 
         $sql = "
     CREATE TABLE `secu_releases` (
@@ -67,10 +67,10 @@ class RdbGatewayTest extends \PHPUnit_Framework_TestCase
       `releasedAt` datetime DEFAULT NULL
     ) ;
         ";
-        self::$connection ->executeUpdate($sql);
-        self::$connection ->executeUpdate("CREATE INDEX `releasedAt` ON secu_releases(`releasedAt`)");
-        self::$connection ->executeUpdate("CREATE INDEX `extkey` ON secu_releases(`username`,`ipAddress`,`cookieToken`)");
-        self::$connection ->executeUpdate("CREATE INDEX `byCookie` ON secu_releases(`username`,`cookieToken`)");
+        self::$connection ->executeQuery($sql);
+        self::$connection ->executeQuery("CREATE INDEX `releasedAt` ON secu_releases(`releasedAt`)");
+        self::$connection ->executeQuery("CREATE INDEX `extkey` ON secu_releases(`username`,`ipAddress`,`cookieToken`)");
+        self::$connection ->executeQuery("CREATE INDEX `byCookie` ON secu_releases(`username`,`cookieToken`)");
     }
 
     function test_createRequestCountsWith()
@@ -104,7 +104,7 @@ class RdbGatewayTest extends \PHPUnit_Framework_TestCase
         $params['loginsFailed'] = 1;
         $this->assertEquals($params, $updateCall[1][1], 'call 1 param 1');
 
-        $result = self::$connection->fetchAll("SELECT * FROM secu_requests");
+        $result = self::$connection->executeQuery("SELECT * FROM secu_requests")->fetchAll();
         $this->assertEquals(1, count($result), '1 row');
         $this->assertEquals($this->requestData1['dtFrom'], $result[0]['dtFrom'], 'dtFrom');
         $this->assertEquals($this->requestData1['username'], $result[0]['username'], 'username');
@@ -214,7 +214,7 @@ class RdbGatewayTest extends \PHPUnit_Framework_TestCase
         $expectedParams['dtLimit'] = $this->dtLimit;
         $this->assertEquals($expectedParams, $callParams[1], 'parameters');
 
-        $result = self::$connection->fetchAll("SELECT * FROM secu_requests");
+        $result = self::$connection->executeQuery("SELECT * FROM secu_requests")->fetchAll();
         $this->assertEquals(1, count($result), '1 row');
         $this->assertEquals($this->requestData1['dtFrom'], $result[0]['dtFrom'], 'dtFrom');
         $this->assertEquals($this->requestData1['username'], $result[0]['username'], 'username');
@@ -245,7 +245,7 @@ class RdbGatewayTest extends \PHPUnit_Framework_TestCase
         $expectedParams = ['dtLimit' => $now->format('Y-m-d H:i:s')];
         $this->assertEquals($expectedParams, $callParams[1], 'parameters');
 
-        $result = self::$connection->fetchAll("SELECT * FROM secu_requests");
+        $result = self::$connection->executeQuery("SELECT * FROM secu_requests")->fetchAll();
         $this->assertEquals(0, count($result), '0 rows');
 
     }
@@ -358,7 +358,7 @@ class RdbGatewayTest extends \PHPUnit_Framework_TestCase
         $expectedParams = array_merge($expectedParams, ['releasedAt' => $this->requestData1['dtFrom']]);
         $this->assertEquals($expectedParams, $callParams[1], 'parameters');
 
-        $result = self::$connection->fetchAll("SELECT * FROM secu_releases");
+        $result = self::$connection->executeQuery("SELECT * FROM secu_releases")->fetchAll();
         $this->assertEquals(1, count($result), '1 row');
         $this->assertEquals($this->requestData1['dtFrom'], $result[0]['releasedAt'], 'releasedAt');
         $this->assertEquals($this->requestData1['username'], $result[0]['username'], 'username');
@@ -398,7 +398,7 @@ class RdbGatewayTest extends \PHPUnit_Framework_TestCase
         ];
         $this->assertEquals($expectedParams, $callParams[1], 'parameters');
 
-        $result = self::$connection->fetchAll("SELECT * FROM secu_releases");
+        $result = self::$connection->executeQuery("SELECT * FROM secu_releases")->fetchAll();
         $this->assertEquals(1, count($result), '1 row');
         $this->assertEquals($now->format('Y-m-d H:i:s'), $result[0]['releasedAt'], 'releasedAt');
 
@@ -462,11 +462,11 @@ class RdbGatewayTest extends \PHPUnit_Framework_TestCase
             , $callParams[0]);
         $this->assertEquals(['dtLimit' => $this->dtLimit], $callParams[1], 'parameters');
 
-        $result = self::$connection->fetchAll("SELECT * FROM secu_releases");
+        $result = self::$connection->executeQuery("SELECT * FROM secu_releases")->fetchAll();
         $this->assertEquals(1, count($result), '1 row');
 
         $this->gateway->deleteReleasesUntil(new \DateTime());
-        $result = self::$connection->fetchAll("SELECT * FROM secu_releases");
+        $result = self::$connection->executeQuery("SELECT * FROM secu_releases")->fetchAll();
         $this->assertEquals(0, count($result), '1 row');
     }
 }

@@ -144,3 +144,13 @@ AuthenticationGuardBundle Issue 9: cross framework library refactoring
 AuthenticationGuardBundle Issue 9: cross framework library refactoring
 - Adapted FunctionalTest to PHP 5.3 (not tested)
 ----------------------------------------
+#2 support several rdb access interfaces
+- Renamed DbalGatewayTest to RdbGatewayTest
+- Renamed DbalGateway to RdbGateway, also renamed in Tests and doc
+- Added DbalGataway subclass for compatibility with older versions of AuhenticationGuardBundle
+- Debugged PDOConnection,PDOException
+- Debugged DbalGatewayTest with PDOConnection
+- Adapted FunctionalTest to use PDOConnection
+- Added PDOConnectionTest
+#2DO: adapt documentation, test with php 5.3
+---------------------------------

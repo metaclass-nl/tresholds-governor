@@ -70,10 +70,10 @@ From your own application:
 
 	```php
     use Metaclass\TresholdsGovernor\Service\TresholdsGovernor;
-    use Metaclass\TresholdsGovernor\Gateway\DbalGateway;
+    use Metaclass\TresholdsGovernor\Gateway\RdbGateway;
 
     //initialize your Doctrine\DBAL\Connection
-    $dbalGateway = new DbalGateway($dbalConnection);
+    $dbalGateway = new RdbGateway($dbalConnection);
     //parameters see step 6
     $governor = new TresholdsGovernor($parameters, $dbalGateway);
     //alternatively you may set separate gateways for RequestCounts to $governor->requestCountsGateway
@@ -93,10 +93,10 @@ From your own application:
 
     ```php
     use Metaclass\TresholdsGovernor\Service\TresholdsGovernor;
-    use Metaclass\TresholdsGovernor\Gateway\DbalGateway;
+    use Metaclass\TresholdsGovernor\Gateway\RdbGateway;
 
     //initialize your Doctrine\DBAL\Connection
-    $dbalGateway = new DbalGateway($dbalConnection);
+    $dbalGateway = new RdbGateway($dbalConnection);
     //parameters see step 6
     $governor = new TresholdsGovernor($parameters, $dbalGateway);
     $governor->packData();

@@ -56,19 +56,19 @@ class PDOConnection
     public function executeQuery($query, array $params = array())
     {
         if ($params) {
-            $stmt = $this->_conn->prepare($query);
+            $stmt = $this->pdo->prepare($query);
             if (false !== $stmt) {
                 $result = $stmt->execute($params);
                 if (false === $result) {
-                    throw new PDOException($stmt->errorInfo(), $stmt->errorCode());
+                    throw new PDOException($stmt->errorInfo());
                 }
             }
         } else {
-            $stmt = $this->_conn->query($query);
+            $stmt = $this->pdo->query($query);
         }
 
         if (false === $stmt) {
-            throw new PDOException($this->pdo->errorInfo(), $this->pdo->errorCode());
+            throw new PDOException($this->pdo->errorInfo());
         }
 
         $stmt->setFetchMode($this->defaultFetchMode);

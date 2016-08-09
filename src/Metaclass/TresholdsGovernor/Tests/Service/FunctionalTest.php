@@ -1,5 +1,5 @@
 <?php 
-namespace Metaclass\AuthenticationGuardBundle\Tests\Service;
+namespace Metaclass\TresholdsGovernor\Tests\Service;
 
 use Metaclass\TresholdsGovernor\Service\TresholdsGovernor;
 use Metaclass\TresholdsGovernor\Manager\RdbManager;
@@ -9,10 +9,11 @@ use Metaclass\TresholdsGovernor\Result\UsernameBlocked;
 use Metaclass\TresholdsGovernor\Result\UsernameBlockedForCookie;
 use Metaclass\TresholdsGovernor\Result\UsernameBlockedForIpAddress;
 
-use Metaclass\TresholdsGovernor\Tests\Gateway\DbalGatewayTest;
-use Metaclass\TresholdsGovernor\Gateway\DbalGateway;
+use Metaclass\TresholdsGovernor\Tests\Gateway\RdbGatewayTest;
+use Metaclass\TresholdsGovernor\Gateway\RdbGateway;
 
-use \Doctrine\DBAL\DriverManager;
+use \PDO;
+use Metaclass\TresholdsGovernor\Connection\PDOConnection;
 
 class FunctionalTest extends \PHPUnit_Framework_TestCase
 {
@@ -23,14 +24,13 @@ class FunctionalTest extends \PHPUnit_Framework_TestCase
     function setup()
     {
         if (!isSet(self::$connection)) {
-            self::$connection = DriverManager::getConnection(array(
-                'memory ' => true,
-                'driver' => 'pdo_sqlite',
-            ));
-            DbalGatewayTest::$connection = self::$connection;
-            DbalGatewayTest::createTables();
+            $pdo = new PDO('sqlite::memory:');
+            self::$connection = new PDOConnection($pdo);
+
+            RdbGatewayTest::$connection = self::$connection;
+            RdbGatewayTest::createTables();
         }
-        $gateway = new DbalGateway(self::$connection);
+        $gateway = new RdbGateway(self::$connection);
         $this->governor = new TresholdsGovernor(array(), new RdbManager($gateway));
 
         $this->governor->dtString = '1980-07-01 00:00:00';
