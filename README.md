@@ -13,7 +13,7 @@ FEATURES
 --------
 
 - Framework-independent library to be used from Framework-specific bundle/component or from applications that
-  impelent their own authentication
+  implement their own authentication
 
 - Registers authentication counts and decides to Block by username or client ip address for 
   which authentication failed too often,
@@ -24,14 +24,14 @@ FEATURES
 - Facilitates a logical difference between failed login lockout and eventual administrative lockout, 
   so that re-enabling all usernames en masse does not unlock administratively locked users (OWASP requirement).
 
-- Automatic release of username on authentication success,
+- Automatic release of username on authentication success (optional),
 
 - Stores counters instead of individual requests to prevent database flooding from brute force attacks.
 
 REQUIREMENTS
 ------------
-PHP >=5.3.3, Doctrine >=2.2.3 (actually only dbal is used, but doctrine/doctrine-bundle is still required) 
-and was tested with MySQL 5.5.
+PHP >=5.3.3, PDO or Doctrine DBAL ^2.3.4 or custom implementations of the Management interfaces
+Tested with MySQL 5.5. and SQLite 3
 
 RELEASE NOTES
 -------------

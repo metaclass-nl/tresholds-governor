@@ -12,12 +12,12 @@
     ],
     "minimum-stability": "dev",
     "require": {
-        "php": ">=5.3.3",
-     	"doctrine/dbal": "^2.3.4" 
+        "php": ">=5.3.3"
     },
     "require-dev": {
     },
     "suggest": {
+        "doctrine/dbal": "^2.3.4"
     },
     "autoload": {
         "psr-0": { "Metaclass\\TresholdsGovernor": "src" }

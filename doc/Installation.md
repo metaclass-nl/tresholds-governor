@@ -64,16 +64,19 @@ From your own application:
     ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 ```
 	(you may use MyISAM)
-	(you may use some other DBMS that is supported by Doctrine DBAL)
+	(you may use some other DBMS that is supported by Doctrine DBAL or PDO)
 
 4. From your own application's authentication code:
 
 	```php
     use Metaclass\TresholdsGovernor\Service\TresholdsGovernor;
     use Metaclass\TresholdsGovernor\Gateway\RdbGateway;
+    use Metaclass\TresholdsGovernor\Connection\PDOConnection; // not necessary if you use DBAL
 
-    //initialize your Doctrine\DBAL\Connection
-    $dbalGateway = new RdbGateway($dbalConnection);
+    //initialize your Doctrine\DBAL\Connection or PDO
+    // if using PDO directy: $connection = new PDOConnection($pdo);
+
+    $dbalGateway = new RdbGateway($connection);
     //parameters see step 6
     $governor = new TresholdsGovernor($parameters, $dbalGateway);
     //alternatively you may set separate gateways for RequestCounts to $governor->requestCountsGateway
@@ -95,8 +98,10 @@ From your own application:
     use Metaclass\TresholdsGovernor\Service\TresholdsGovernor;
     use Metaclass\TresholdsGovernor\Gateway\RdbGateway;
 
-    //initialize your Doctrine\DBAL\Connection
-    $dbalGateway = new RdbGateway($dbalConnection);
+    //initialize your Doctrine\DBAL\Connection or PDO
+    // if using PDO directy: $connection = new PDOConnection($pdo);
+
+    $dbalGateway = new RdbGateway($connection);
     //parameters see step 6
     $governor = new TresholdsGovernor($parameters, $dbalGateway);
     $governor->packData();
@@ -238,6 +243,17 @@ Configurations
     is called by ::sleepUntilFixedExecutionTime).
 
 Notes
+
+- DBAL sets PDO attribute PDO::ATTR_ERRMODE to PDO::ERRMODE_EXCEPTION.
+  The Tresholds Governor expects exceptions to be thrown on database errors.
+  If your application is using PDO::ERRMODE_SILENT you may prefer using
+  Metaclass\TresholdsGovernor\Connection\PDOConnection because it will
+  throw Exceptions on silent PDO errors.
+  (and add maybe a try catch around
+  ```php
+      $governor->initFor($ipAddress, $username, $password, ''); //using the last parameter is not yet documented
+      $result = $governor->checkAuthentication();
+  )
 
 - releasing is possible for a username in general, an IP address in general, or for the combination of a username with an ip address
 
