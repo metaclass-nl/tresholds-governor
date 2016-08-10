@@ -254,6 +254,7 @@ Notes
       $governor->initFor($ipAddress, $username, $password, ''); //using the last parameter is not yet documented
       $result = $governor->checkAuthentication();
   )
+```
 
 - releasing is possible for a username in general, an IP address in general, or for the combination of a username with an ip address
 
