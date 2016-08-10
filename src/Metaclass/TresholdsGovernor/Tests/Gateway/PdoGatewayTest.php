@@ -2,7 +2,7 @@
 
 namespace Metaclass\TresholdsGovernor\Tests\Gateway;
 
-use Metaclass\TresholdsGovernor\Connection\PDOException;
+use Metaclass\TresholdsGovernor\Connection\PDOConnection;
 use \PDO;
 
 /**

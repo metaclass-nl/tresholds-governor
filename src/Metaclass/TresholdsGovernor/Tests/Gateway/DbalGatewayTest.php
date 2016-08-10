@@ -13,10 +13,10 @@ class DbalGatewayTest extends RdbGatewayTest {
 
     protected function makeConnection()
     {
-        self::$connection = DriverManager::getConnection([
+        self::$connection = DriverManager::getConnection(array(
             'memory ' => true,
             'driver' => 'pdo_sqlite',
-        ]);
+        ));
     }
 
 

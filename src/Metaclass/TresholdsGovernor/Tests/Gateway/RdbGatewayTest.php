@@ -225,9 +225,13 @@ class RdbGatewayTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals($expectedParams['value'], $result[0]['userReleasedForAddressAndCookieAt'], 'userReleasedForAddressAndCookieAt');
     }
 
-    /** @expectedException \TypeError */
-    function testExceptionDeleteCountsUntil()
+    function testException_deleteCountsUntil()
     {
+        $exCls = version_compare(PHP_VERSION, '7.0.0', '>=')
+            ? '\TypeError'
+            : '\PHPUnit_Framework_Error';
+
+        $this->setExpectedException($exCls);
         $this->gateway->deleteCountsUntil(null);
     }
 
@@ -242,7 +246,7 @@ class RdbGatewayTest extends \PHPUnit_Framework_TestCase
             "DELETE FROM secu_requests WHERE dtFrom < :dtLimit"
             , $callParams[0]
         );
-        $expectedParams = ['dtLimit' => $now->format('Y-m-d H:i:s')];
+        $expectedParams = array('dtLimit' => $now->format('Y-m-d H:i:s'));
         $this->assertEquals($expectedParams, $callParams[1], 'parameters');
 
         $result = self::$connection->executeQuery("SELECT * FROM secu_requests")->fetchAll();
@@ -280,7 +284,7 @@ class RdbGatewayTest extends \PHPUnit_Framework_TestCase
             LIMIT 200"
             , $callParams[0]
         );
-        $expectedParams = [$this->dtLimit, $now->format('Y-m-d H:i:s'), $this->requestData1['username']];
+        $expectedParams = array($this->dtLimit, $now->format('Y-m-d H:i:s'), $this->requestData1['username']);
         $this->assertEquals($expectedParams, $callParams[1], 'parameters');
 
         $this->assertTrue(is_array($result), 'array');
@@ -310,7 +314,7 @@ class RdbGatewayTest extends \PHPUnit_Framework_TestCase
             LIMIT 500"
             , $callParams[0]
         );
-        $expectedParams = [$this->dtLimit, $now->format('Y-m-d H:i:s'), $this->requestData1['username'], $this->requestData1['ipAddress'] ];
+        $expectedParams = array($this->dtLimit, $now->format('Y-m-d H:i:s'), $this->requestData1['username'], $this->requestData1['ipAddress'] );
         $this->assertEquals($expectedParams, $callParams[1], 'parameters');
 
         $this->assertTrue(is_array($result), 'array');
@@ -342,11 +346,11 @@ class RdbGatewayTest extends \PHPUnit_Framework_TestCase
             "SELECT id from secu_releases WHERE username = :username AND ipAddress = :ipAddress AND cookieToken = :cookieToken"
             , $callParams[0]
         );
-        $expectedParams = [
+        $expectedParams = array(
             'ipAddress' => $this->requestData1['ipAddress'],
             'username' => $this->requestData1['username'],
             'cookieToken' => $this->requestData1['token'],
-        ];
+        );
         $this->assertEquals($expectedParams, $callParams[1], 'parameters');
 
         $this->assertEquals('executeQuery', $this->wrapper->calls[1][0], 'connection method called');
@@ -355,7 +359,7 @@ class RdbGatewayTest extends \PHPUnit_Framework_TestCase
             "INSERT INTO secu_releases (releasedAt, username, ipAddress, cookieToken) VALUES (:releasedAt, :username, :ipAddress, :cookieToken)"
             , $callParams[0]
         );
-        $expectedParams = array_merge($expectedParams, ['releasedAt' => $this->requestData1['dtFrom']]);
+        $expectedParams = array_merge($expectedParams, array('releasedAt' => $this->requestData1['dtFrom']));
         $this->assertEquals($expectedParams, $callParams[1], 'parameters');
 
         $result = self::$connection->executeQuery("SELECT * FROM secu_releases")->fetchAll();
@@ -377,11 +381,11 @@ class RdbGatewayTest extends \PHPUnit_Framework_TestCase
             "SELECT id from secu_releases WHERE username = :username AND ipAddress = :ipAddress AND cookieToken = :cookieToken"
             , $callParams[0]
         );
-        $expectedParams = [
+        $expectedParams = array(
             'ipAddress' => $this->requestData1['ipAddress'],
             'username' => $this->requestData1['username'],
             'cookieToken' => $this->requestData1['token'],
-        ];
+        );
         $this->assertEquals($expectedParams, $callParams[1], 'parameters');
         $id = self::$connection->executeQuery($callParams[0], $callParams[1])->fetchColumn();
         $this->assertNotFalse($id, 'id found');
@@ -392,10 +396,10 @@ class RdbGatewayTest extends \PHPUnit_Framework_TestCase
             "UPDATE secu_releases SET releasedAt = :releasedAt WHERE id = :id"
             , $callParams[0]
         );
-        $expectedParams = [
+        $expectedParams = array(
             'releasedAt' => $now->format('Y-m-d H:i:s'),
             'id' => $id,
-        ];
+        );
         $this->assertEquals($expectedParams, $callParams[1], 'parameters');
 
         $result = self::$connection->executeQuery("SELECT * FROM secu_releases")->fetchAll();
@@ -419,11 +423,11 @@ class RdbGatewayTest extends \PHPUnit_Framework_TestCase
                 AND r.username = ? AND r.ipAddress = ? "
             , $callParams[0]
         );
-        $expectedParams = [
+        $expectedParams = array(
             $this->dtLimit,
             $this->requestData1['username'],
             $this->requestData1['ipAddress'],
-        ];
+        );
         $this->assertEquals($expectedParams, $callParams[1], 'parameters');
 
         $this->assertTrue($result, 'result');
@@ -442,14 +446,24 @@ class RdbGatewayTest extends \PHPUnit_Framework_TestCase
                 AND r.username = ? AND r.cookieToken = ? "
             , $callParams[0]
         );
-        $expectedParams = [
+        $expectedParams = array(
             $this->dtLimit,
             $this->requestData1['username'],
             $this->requestData1['token'],
-        ];
+        );
         $this->assertEquals($expectedParams, $callParams[1], 'parameters');
 
         $this->assertTrue($result, 'result');
+    }
+
+    function testException_deleteReleasesUntil()
+    {
+        $exCls = version_compare(PHP_VERSION, '7.0.0', '>=')
+            ? '\TypeError'
+            : '\PHPUnit_Framework_Error';
+
+        $this->setExpectedException($exCls);
+        $this->gateway->deleteReleasesUntil(null);
     }
 
     function test_deleteReleasesUntil()
@@ -460,7 +474,10 @@ class RdbGatewayTest extends \PHPUnit_Framework_TestCase
         $callParams = $this->wrapper->calls[0][1];
         $this->assertEquals("DELETE FROM secu_releases WHERE releasedAt < :dtLimit"
             , $callParams[0]);
-        $this->assertEquals(['dtLimit' => $this->dtLimit], $callParams[1], 'parameters');
+        $this->assertEquals(
+            array('dtLimit' => $this->dtLimit),
+            $callParams[1],
+            'parameters');
 
         $result = self::$connection->executeQuery("SELECT * FROM secu_releases")->fetchAll();
         $this->assertEquals(1, count($result), '1 row');

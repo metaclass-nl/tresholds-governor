@@ -157,4 +157,7 @@ AuthenticationGuardBundle Issue 9: cross framework library refactoring
 - adapted Installation.md, README.md
 - composer.json moved requirement for dbal to suggest
 --------------------------------------------
-#2DO: test with php 5.3, tag v0.3
+#2 support several rdb access interfaces
+- adapted to PHP 5.3
+------------------------------
+#2DO: tag v0.3 (when finished solving issues)
