@@ -486,4 +486,10 @@ class RdbGatewayTest extends \PHPUnit_Framework_TestCase
         $result = self::$connection->executeQuery("SELECT * FROM secu_releases")->fetchAll();
         $this->assertEquals(0, count($result), '1 row');
     }
+
+    function testCleanupDb()
+    {
+        self::$connection->executeQuery("DELETE FROM secu_releases");
+        self::$connection->executeQuery("DELETE FROM secu_requests");
+    }
 }
