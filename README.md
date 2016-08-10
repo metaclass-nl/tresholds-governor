@@ -30,7 +30,10 @@ FEATURES
 
 REQUIREMENTS
 ------------
-PHP >=5.3.3, PDO or Doctrine DBAL ^2.3.4 or custom implementations of the Management interfaces
+PHP >=5.3.3,
+
+PDO or Doctrine DBAL ^2.3.4 or custom implementations of the Management interfaces.
+
 Tested with MySQL 5.5. and SQLite 3
 
 RELEASE NOTES
