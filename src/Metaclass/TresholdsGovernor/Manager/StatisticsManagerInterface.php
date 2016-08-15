@@ -35,7 +35,7 @@ interface StatisticsManagerInterface
     /** @see RequestCountsManagerInterface::countLoginsFailedForUserName */
     public function countLoginsFailedForUserName($username, \DateTime $timeLimit);
 
-    /** Counts grouped by Ip address that have not been released
+    /** Counts grouped by Ip address
      * with `dtFrom` after $limitFrom AND as far as specified
      * `dtFrom` before $limitUntil, $username equals specified
      * Counts are:
@@ -53,7 +53,7 @@ interface StatisticsManagerInterface
      */
     public function countsGroupedByIpAddress(\DateTime $limitFrom, \DateTime $limitUntil=null, $username=null);
 
-    /** Selects Counts that have not been released
+    /** Selects Counts
      * with `dtFrom` after or erual to $limitFrom AND before $limitUntil,
      * and `username` equals specified,
      * ordered by `dtFrom`.
@@ -64,7 +64,7 @@ interface StatisticsManagerInterface
      */
     public function countsByUsernameBetween($username, \DateTime $limitFrom, \DateTime $limitUntil);
 
-    /** Selects Counts that have not been released
+    /** Selects Counts
      * with `dtFrom` after or erual to $limitFrom AND before $limitUntil,
      * and `ipAddress' equals specified,
      * ordered by `dtFrom`.

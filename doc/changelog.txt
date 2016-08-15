@@ -163,4 +163,13 @@ AuthenticationGuardBundle Issue 9: cross framework library refactoring
 #2 support several rdb access interfaces
 - RdbGatewayTest added db cleanup
 ---------------------------------
+#4 blocked counters need unit tests
+- RdbGatewayTest::test_createRequestCountsWith now tests with blockedCounter
+- FunctionalTest now keeps statisticsManager separate
+    ::testCheckAuthenticationUnreleased now checks blockedCounters update
+    ::testCheckAuthenticationWithUserReleasedOnIpAddressAndCookie now checks blockedCounters insert
+- RdbGateway::createRequestCountsWith added blockedCounter = 1 if supplied
+#5 api docs for statistics functions
+- removed "that not have been released"
+-------------------------------
 #2DO: tag v0.3 (when finished solving issues)

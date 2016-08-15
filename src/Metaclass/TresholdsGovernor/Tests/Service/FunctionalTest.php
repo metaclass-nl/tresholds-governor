@@ -1,6 +1,7 @@
 <?php 
 namespace Metaclass\TresholdsGovernor\Tests\Service;
 
+use Metaclass\TresholdsGovernor\Manager\StatisticsManagerInterface;
 use Metaclass\TresholdsGovernor\Service\TresholdsGovernor;
 use Metaclass\TresholdsGovernor\Manager\RdbManager;
 use Metaclass\TresholdsGovernor\Result\Rejection;
@@ -19,7 +20,15 @@ class FunctionalTest extends \PHPUnit_Framework_TestCase
 {
     STATIC $connection;
 
+    /**
+     * @var TresholdsGovernor
+     */
     protected $governor;
+
+    /**
+     * @var StatisticsManagerInterface
+     */
+    protected $statisticsManager;
 
     function setup()
     {
@@ -31,7 +40,9 @@ class FunctionalTest extends \PHPUnit_Framework_TestCase
             RdbGatewayTest::createTables();
         }
         $gateway = new RdbGateway(self::$connection);
-        $this->governor = new TresholdsGovernor(array(), new RdbManager($gateway));
+        $manager = new RdbManager($gateway);
+        $this->governor = new TresholdsGovernor(array(), $manager);
+        $this->statisticsManager = $manager;
 
         $this->governor->dtString = '1980-07-01 00:00:00';
         $this->governor->counterDurationInSeconds = 300; //5 minutes
@@ -105,9 +116,22 @@ class FunctionalTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(0, $this->get('failureCountForUserByCookie'), 'failure count for username by other cookie');        
         $this->assertFalse($this->get('isUserReleasedOnAddress'), 'is user released on address');
         $this->assertFalse($this->get('isUserReleasedByCookie'), 'is user released on other cookie');
+
+        //count increments because 'just failed' are transient, governor is reinitialized in next test
+
+        // Assert that one counter exists for 192.168.255.255
+        $from = new \DateTime('1980-07-01 00:00:00');
+        $until = new \DateTime('1981-01-01');
+        $counts = $this->statisticsManager->countsByAddressBetween('192.168.255.255', $from, $until);
+        $this->assertEquals(1, count($counts), '192.168.255.255 one counter');
+        $this->assertEquals(0, $counts[0]['ipAddressBlocked'], '192.168.255.255 ipAddressBlocked');
+        $this->assertEquals(0, $counts[0]['usernameBlocked'], '192.168.255.255 usernameBlocked');
+        $this->assertEquals(0, $counts[0]['usernameBlockedForIpAddress'], '192.168.255.255 usernameBlockedForIpAddress');
+        $this->assertEquals(0, $counts[0]['usernameBlockedForCookie'], '192.168.255.255 usernameBlockedForCookie');
     }
 
-    function checkAuthenticationJustFailed() 
+    // Feature Not used
+    function checkAuthenticationJustFailed()
     {
         $this->governor->limitPerUserName = 3;
         $this->governor->limitBasePerIpAddress = 3;
@@ -122,8 +146,6 @@ class FunctionalTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(2, $this->get('failureCountForUserName'), 'failure count for username');
         $this->assertEquals(2, $this->get('failureCountForUserOnAddress'), 'failure count for username on address');
         $this->assertEquals(2, $this->get('failureCountForUserByCookie'), 'failure count for username by cookie');
-        
-        //count increments because 'just failed' are transient, governor is reinitialized in next test
     }
     
     function testCheckAuthenticationUnreleased() 
@@ -151,6 +173,16 @@ class FunctionalTest extends \PHPUnit_Framework_TestCase
         $this->assertInstanceOf('Metaclass\TresholdsGovernor\Result\UsernameBlocked', $result);
         $this->assertEquals("Username '%username%' is blocked", $result->message);
         $this->assertEquals(array('%username%' => 'testuser1'), $result->parameters);
+
+        // Assert that the one counts for 192.168.255.255 blocked counters have been incremented accordingly
+        $from = new \DateTime('1980-07-01 00:00:00');
+        $until = new \DateTime('1981-01-01');
+        $counts = $this->statisticsManager->countsByAddressBetween('192.168.255.255', $from, $until);
+        $this->assertEquals(1, count($counts), '192.168.255.255 one counter');
+        $this->assertEquals(1, $counts[0]['ipAddressBlocked'], '192.168.255.255 ipAddressBlocked');
+        $this->assertEquals(1, $counts[0]['usernameBlocked'], '192.168.255.255 usernameBlocked');
+        $this->assertEquals(0, $counts[0]['usernameBlockedForIpAddress'], '192.168.255.255 usernameBlockedForIpAddress');
+        $this->assertEquals(0, $counts[0]['usernameBlockedForCookie'], '192.168.255.255 usernameBlockedForCookie');
     }
     
     function testRegisterAuthenticationSuccess() 
@@ -282,7 +314,31 @@ class FunctionalTest extends \PHPUnit_Framework_TestCase
         
         $this->governor->limitPerUserName = 2;
         $this->assertNull($this->governor->checkAuthentication()); //assert no Rejection because of cookieToken released
-        
+
+        // Assert that new counters have been created for the 'failed' decisions,
+        // with the right blockedCounter set to 1
+        $from = new \DateTime('1980-07-01 00:00:05');
+        $until = new \DateTime('1981-01-01');
+        $counts = $this->statisticsManager->countsByAddressBetween('192.168.255.255', $from, $until);
+        $this->assertEquals(2, count($counts), '192.168.255.255 counter2');
+
+        $testuser1 = array_filter($counts, function($e) {
+            return $e['username'] == 'testuser1';
+        });
+        $this->assertEquals(1, count($testuser1) , '192.168.255.255 testuser1');
+        $this->assertEquals(0, current($testuser1)['ipAddressBlocked'], '192.168.255.255 ipAddressBlocked');
+        $this->assertEquals(0, current($testuser1)['usernameBlocked'], '192.168.255.255 usernameBlocked');
+        $this->assertEquals(1, current($testuser1)['usernameBlockedForIpAddress'], '192.168.255.255 usernameBlockedForIpAddress');
+        $this->assertEquals(0, current($testuser1)['usernameBlockedForCookie'], '192.168.255.255 usernameBlockedForCookie');
+
+        $testuser2 = array_filter($counts, function($e) {
+            return $e['username'] == 'testuser2';
+        });
+        $this->assertEquals(1, count($testuser2) , '192.168.255.255 testuser1');
+        $this->assertEquals(1, current($testuser2)['ipAddressBlocked'], '192.168.255.255 ipAddressBlocked');
+        $this->assertEquals(0, current($testuser2)['usernameBlocked'], '192.168.255.255 usernameBlocked');
+        $this->assertEquals(0, current($testuser2)['usernameBlockedForIpAddress'], '192.168.255.255 usernameBlockedForIpAddress');
+        $this->assertEquals(0, current($testuser2)['usernameBlockedForCookie'], '192.168.255.255 usernameBlockedForCookie');
     }
     
     function testBlockingDurations() 

@@ -160,6 +160,9 @@ class RdbGateway {
             'ipAddress' => $ipAddress,
             'cookieToken' => $cookieToken,
             $counter => 1 );
+        if (null !== $blockedCounterName) {
+            $params[$blockedCounterName] = 1;
+        }
         $columns = implode(', ', array_keys($params));
         $values = ':'. implode(', :', array_keys($params));
         $sql = "INSERT INTO secu_requests ($columns) VALUES ($values)";
@@ -221,7 +224,7 @@ class RdbGateway {
 
 // Statistics
 
-    /** Selects counts grouped by `ipAdress` that have not been released
+    /** Selects counts grouped by `ipAdress`
      * with `dtFrom` after or equal to $limitFrom AND as far as specified
      * `dtFrom` before $limitUntil, `username` equals specified,
      * in ascenting order of `ipAdress`
@@ -271,8 +274,8 @@ class RdbGateway {
         return $result;
     }
 
-    /** Selects Counts that have not been released
-     * with `dtFrom` after or erual to $limitFrom AND before $limitUntil,
+    /** Selects Counts
+     * with `dtFrom` after or equal to $limitFrom AND before $limitUntil,
      * and as far as specified, `username` and `ipAddress' equals specified,
      * ordered by `dtFrom`.
      * @param \DateTime $limitFrom

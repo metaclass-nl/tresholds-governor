@@ -76,7 +76,7 @@ class RdbGatewayTest extends \PHPUnit_Framework_TestCase
     function test_createRequestCountsWith()
     {
         $loginSucceeded = false;
-        $blockedCounterName = null;
+        $blockedCounterName = 'usernameBlockedForCookie';
         $this->gateway->insertOrIncrementCount(new \DateTime($this->requestData1['dtFrom']), $this->requestData1['username'], $this->requestData1['ipAddress'], $this->requestData1['token'], $loginSucceeded, $blockedCounterName);
 
         $this->assertEquals('executeQuery', $this->wrapper->calls[0][0]);
@@ -95,13 +95,14 @@ class RdbGatewayTest extends \PHPUnit_Framework_TestCase
         $updateCall = $this->wrapper->calls[1];
         $this->assertEquals('executeQuery', $updateCall[0], 'call 1');
         $this->assertEquals(
-            "INSERT INTO secu_requests (dtFrom, username, ipAddress, cookieToken, loginsFailed) VALUES (:dtFrom, :username, :ipAddress, :cookieToken, :loginsFailed)",
+            "INSERT INTO secu_requests (dtFrom, username, ipAddress, cookieToken, loginsFailed, usernameBlockedForCookie) VALUES (:dtFrom, :username, :ipAddress, :cookieToken, :loginsFailed, :usernameBlockedForCookie)",
             $updateCall[1][0],
             'call 1 param 0');
         $params = $this->requestData1;
         $params['cookieToken'] = $this->requestData1['token'];
         unset($params['token']);
         $params['loginsFailed'] = 1;
+        $params['usernameBlockedForCookie'] = 1;
         $this->assertEquals($params, $updateCall[1][1], 'call 1 param 1');
 
         $result = self::$connection->executeQuery("SELECT * FROM secu_requests")->fetchAll();
@@ -115,7 +116,7 @@ class RdbGatewayTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(0, $result[0]['ipAddressBlocked'], 'ipAddressBlocked');
         $this->assertEquals(0, $result[0]['usernameBlocked'], 'usernameBlocked');
         $this->assertEquals(0, $result[0]['usernameBlockedForIpAddress'], 'usernameBlockedForIpAddress');
-        $this->assertEquals(0, $result[0]['usernameBlockedForCookie'], 'usernameBlockedForCookie');
+        $this->assertEquals(1, $result[0]['usernameBlockedForCookie'], 'usernameBlockedForCookie');
         $this->assertEquals(0, $result[0]['requestsAuthorized'], 'requestsAuthorized');
         $this->assertEquals(0, $result[0]['requestsDenied'], 'requestsDenied');
         $this->assertNull($result[0]['userReleasedAt'], 'userReleasedAt');
