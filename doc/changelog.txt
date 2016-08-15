@@ -172,4 +172,8 @@ AuthenticationGuardBundle Issue 9: cross framework library refactoring
 #5 api docs for statistics functions
 - removed "that not have been released"
 -------------------------------
+#4 blocked counters need unit tests
+- FunctionalTest ::testCheckAuthenticationWithUserReleasedOnIpAddressAndCookie
+    made compatible with PHP 5.3
+------------------------------------
 #2DO: tag v0.3 (when finished solving issues)

@@ -322,23 +322,25 @@ class FunctionalTest extends \PHPUnit_Framework_TestCase
         $counts = $this->statisticsManager->countsByAddressBetween('192.168.255.255', $from, $until);
         $this->assertEquals(2, count($counts), '192.168.255.255 counter2');
 
-        $testuser1 = array_filter($counts, function($e) {
+        $countsTestuser1 = array_filter($counts, function($e) {
             return $e['username'] == 'testuser1';
         });
-        $this->assertEquals(1, count($testuser1) , '192.168.255.255 testuser1');
-        $this->assertEquals(0, current($testuser1)['ipAddressBlocked'], '192.168.255.255 ipAddressBlocked');
-        $this->assertEquals(0, current($testuser1)['usernameBlocked'], '192.168.255.255 usernameBlocked');
-        $this->assertEquals(1, current($testuser1)['usernameBlockedForIpAddress'], '192.168.255.255 usernameBlockedForIpAddress');
-        $this->assertEquals(0, current($testuser1)['usernameBlockedForCookie'], '192.168.255.255 usernameBlockedForCookie');
+        $this->assertEquals(1, count($countsTestuser1) , '192.168.255.255 testuser1');
+        $testuser1 = current($countsTestuser1);
+        $this->assertEquals(0, $testuser1['ipAddressBlocked'], '192.168.255.255 ipAddressBlocked');
+        $this->assertEquals(0, $testuser1['usernameBlocked'], '192.168.255.255 usernameBlocked');
+        $this->assertEquals(1, $testuser1['usernameBlockedForIpAddress'], '192.168.255.255 usernameBlockedForIpAddress');
+        $this->assertEquals(0, $testuser1['usernameBlockedForCookie'], '192.168.255.255 usernameBlockedForCookie');
 
-        $testuser2 = array_filter($counts, function($e) {
+        $countsTestuser2 = array_filter($counts, function($e) {
             return $e['username'] == 'testuser2';
         });
-        $this->assertEquals(1, count($testuser2) , '192.168.255.255 testuser1');
-        $this->assertEquals(1, current($testuser2)['ipAddressBlocked'], '192.168.255.255 ipAddressBlocked');
-        $this->assertEquals(0, current($testuser2)['usernameBlocked'], '192.168.255.255 usernameBlocked');
-        $this->assertEquals(0, current($testuser2)['usernameBlockedForIpAddress'], '192.168.255.255 usernameBlockedForIpAddress');
-        $this->assertEquals(0, current($testuser2)['usernameBlockedForCookie'], '192.168.255.255 usernameBlockedForCookie');
+        $this->assertEquals(1, count($countsTestuser2) , '192.168.255.255 testuser2');
+        $testuser2 = current($countsTestuser2);
+        $this->assertEquals(1, $testuser2['ipAddressBlocked'], '192.168.255.255 ipAddressBlocked');
+        $this->assertEquals(0, $testuser2['usernameBlocked'], '192.168.255.255 usernameBlocked');
+        $this->assertEquals(0, $testuser2['usernameBlockedForIpAddress'], '192.168.255.255 usernameBlockedForIpAddress');
+        $this->assertEquals(0, $testuser2['usernameBlockedForCookie'], '192.168.255.255 usernameBlockedForCookie');
     }
     
     function testBlockingDurations() 
