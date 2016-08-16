@@ -17,9 +17,9 @@ class TresholdsGovernorTest extends \PHPUnit_Framework_TestCase
 {
     public $governor;
 
-    function setup() 
+    public function setup()
     {
-	    $this->governor = new TresholdsGovernor(array());
+        $this->governor = new TresholdsGovernor(array());
 
         $this->governor->dtString = '1980-07-01 00:00:00';
         $this->governor->counterDurationInSeconds = 300; //5 minutes
@@ -27,7 +27,6 @@ class TresholdsGovernorTest extends \PHPUnit_Framework_TestCase
         $this->governor->blockIpAddressesFor = '30 days'; //not very realistic, but should still work
         $this->governor->allowReleasedUserOnAddressFor = '30 days';
         $this->governor->allowReleasedUserByCookieFor =  '10 days';
-
     }
     
     protected function get($propName)
@@ -38,7 +37,7 @@ class TresholdsGovernorTest extends \PHPUnit_Framework_TestCase
         return $rProp->getValue($this->governor);
     }
 
-    function testPackData()
+    public function testPackData()
     {
         $this->governor->requestCountsManager = new RdbManager(new MockGateway());
         $this->governor->releasesManager = new RdbManager(new MockGateway());
@@ -47,7 +46,7 @@ class TresholdsGovernorTest extends \PHPUnit_Framework_TestCase
         $this->governor->blockIpAddressesFor = '5 days';
 //        $this->governor->allowReleasedUserOnAddressFor = '30 days';
 //        $this->governor->allowReleasedUserByCookieFor =  '10 days';
-        
+
         $this->assertNull($this->governor->requestCountsManager->gateway->deleteReleasesLimit, "releasesLimit on requestCountsGateway");
         $this->assertNull($this->governor->releasesManager->gateway->deleteCountsLimit, "deleteCountsLimit on releasesGateway");
 
@@ -87,13 +86,13 @@ class TresholdsGovernorTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(new \DateTime('1980-06-26 00:00:00'), $this->governor->releasesManager->gateway->deleteReleasesLimit, "deleteReleasesLimit on releasesGateway");
     }
     
-    function assertNoException($value, $message = '') 
+    public function assertNoException($value, $message = '')
     {
         //assertNotNull crashes on exception.
         // workaround for ugly $this->assertThat($result, $this->logicalNot(new \PHPUnit_Framework_Constraint_Exception('Exception')) );
-        if ($value instanceOf \Exception) {
+        if ($value instanceof \Exception) {
             $this->assertTrue(true); // replaces self::$count += count($constraint); wich does not work because $count is private :-(
-    
+
             $failureDescription = "Failed asserting no Exception: \n"
                     . get_class($value) . " with message '". $value->getMessage();
             $failureDescription .= "' in ". $value->getFile(). ':'. $value->getLine();
@@ -103,6 +102,5 @@ class TresholdsGovernorTest extends \PHPUnit_Framework_TestCase
             }
             throw new \PHPUnit_Framework_ExpectationFailedException($failureDescription, null);
         }
-    }   
+    }
 }
-?>

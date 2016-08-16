@@ -15,5 +15,4 @@ class PdoGatewayTest extends RdbGatewayTest
         $pdo = new PDO('sqlite::memory:');
         self::$connection = new PDOConnection($pdo);
     }
-
 }

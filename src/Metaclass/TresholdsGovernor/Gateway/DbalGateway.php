@@ -8,5 +8,4 @@ namespace Metaclass\TresholdsGovernor\Gateway;
  */
 class DbalGateway extends RdbGateway
 {
-
 }

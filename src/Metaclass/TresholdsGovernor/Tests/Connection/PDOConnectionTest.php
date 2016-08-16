@@ -6,19 +6,18 @@ use Metaclass\TresholdsGovernor\Connection\PDOException;
 use \PDO;
 use Metaclass\TresholdsGovernor\Connection\PDOConnection;
 
-
 class PDOConnectionTest extends \PHPUnit_Framework_TestCase
 {
-    STATIC $connection;
+    public static $connection;
 
-    function setup()
+    public function setup()
     {
-        if (!isSet(self::$connection)) {
+        if (!isset(self::$connection)) {
             $this->makeConnection();
         }
     }
 
-    function testCreateTable()
+    public function testCreateTable()
     {
         self::$connection->executeQuery('
     CREATE TABLE `testtable` (
@@ -28,7 +27,7 @@ class PDOConnectionTest extends \PHPUnit_Framework_TestCase
             ');
     }
 
-    function testInsertRetrieve()
+    public function testInsertRetrieve()
     {
         // Insert using parameterized query
         $datetime = '2012-01-21 21:50';
@@ -44,13 +43,13 @@ class PDOConnectionTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals($datetime, $found[0]['dtFrom']);
     }
 
-    function makeConnection()
+    public function makeConnection()
     {
         $pdo = new PDO('sqlite::memory:');
         self::$connection = new PDOConnection($pdo);
     }
 
-    function testErrorHandlingQuery()
+    public function testErrorHandlingQuery()
     {
         $exception = null;
         try {
@@ -69,7 +68,7 @@ class PDOConnectionTest extends \PHPUnit_Framework_TestCase
         print 'testErrorHandlingQuery '. $exception->getLine(). ' '. $exception->getMessage(). "\n";
     }
 
-    function testErrorHandlingPrepare()
+    public function testErrorHandlingPrepare()
     {
         $exception = null;
         try {
@@ -84,7 +83,7 @@ class PDOConnectionTest extends \PHPUnit_Framework_TestCase
         print 'testErrorHandlingPrepare '. $exception->getLine(). ' '. $exception->getMessage(). "\n";
     }
 
-    function testErrorHandlingExecute()
+    public function testErrorHandlingExecute()
     {
         $exception = null;
         try {
@@ -100,5 +99,4 @@ class PDOConnectionTest extends \PHPUnit_Framework_TestCase
 
         print 'testErrorHandlingExecute '. $exception->getLine(). ' '. $exception->getMessage(). "\n";
     }
-
 }

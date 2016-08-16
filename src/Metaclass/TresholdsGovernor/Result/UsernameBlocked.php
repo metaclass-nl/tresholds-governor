@@ -14,6 +14,4 @@ class UsernameBlocked extends Rejection
     {
         return 'usernameBlocked';
     }
-
 }
-?>

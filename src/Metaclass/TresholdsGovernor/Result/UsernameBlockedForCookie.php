@@ -14,6 +14,4 @@ class UsernameBlockedForCookie extends Rejection
     {
         return 'usernameBlockedForCookie';
     }
-
 }
-?>

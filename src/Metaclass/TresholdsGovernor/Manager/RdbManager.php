@@ -34,13 +34,13 @@ class RdbManager implements ReleasesManagerInterface,  RequestCountsManagerInter
     
     /** {@inheritdoc} */
     public function countLoginsFailedForUserName($username, \DateTime $timeLimit)
-    { 
+    {
         return $this->gateway->countWhereSpecifiedAfter('loginsFailed', $username,  null, null, $timeLimit, 'userReleasedAt');
     }
     
     /** {@inheritdoc} */
     public function countLoginsFailedForUserOnAddress($username, $ipAddress, \DateTime $timeLimit)
-    { 
+    {
         return $this->gateway->countWhereSpecifiedAfter('loginsFailed', $username, $ipAddress, null, $timeLimit, 'userReleasedForAddressAndCookieAt');
     }
     
@@ -53,7 +53,7 @@ class RdbManager implements ReleasesManagerInterface,  RequestCountsManagerInter
     /** {@inheritdoc} */
     public function insertOrIncrementSuccessCount(\DateTime $dateTime, $username, $ipAddress, $cookieToken)
     {
-         $this->gateway->insertOrIncrementCount($dateTime, $username, $ipAddress, $cookieToken, true);
+        $this->gateway->insertOrIncrementCount($dateTime, $username, $ipAddress, $cookieToken, true);
     }
     
     /** {@inheritdoc} */
@@ -100,12 +100,12 @@ class RdbManager implements ReleasesManagerInterface,  RequestCountsManagerInter
 //StatisticsManagerInterface
 
     /** {@inheritdoc} */
-    public function countLoginsFailed( \DateTime $timeLimit)
+    public function countLoginsFailed(\DateTime $timeLimit)
     {
         return $this->gateway->countWhereSpecifiedAfter('loginsFailed', null, null, null, $timeLimit);
     }
     /** {@inheritdoc} */
-    public function countLoginsSucceeded( \DateTime $timeLimit)
+    public function countLoginsSucceeded(\DateTime $timeLimit)
     {
         return $this->gateway->countWhereSpecifiedAfter('loginsSucceeded', null, null, null, $timeLimit);
     }
@@ -151,9 +151,9 @@ class RdbManager implements ReleasesManagerInterface,  RequestCountsManagerInter
     
     /** {@inheritdoc} */
     public function isUserReleasedByCookieFrom($username, $cookieToken, $timeLimit)
-     {
-       return $this->gateway->isUserReleasedByCookieFrom($username, $cookieToken, $timeLimit);
-     }
+    {
+        return $this->gateway->isUserReleasedByCookieFrom($username, $cookieToken, $timeLimit);
+    }
      
     /** {@inheritdoc} */
      public function insertOrUpdateRelease($dateTime, $username, $ipAddress, $cookieToken)
@@ -166,7 +166,4 @@ class RdbManager implements ReleasesManagerInterface,  RequestCountsManagerInter
      {
          $this->gateway->deleteReleasesUntil($limit);
      }
-
 }
-
-?>

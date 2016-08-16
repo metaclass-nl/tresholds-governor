@@ -17,9 +17,10 @@ use Metaclass\TresholdsGovernor\Result\UsernameBlockedForIpAddress;
  * @author Henk Verhoeven
  * @copyright MetaClass Groningen 2013 - 2014
  */
-class TresholdsGovernor {
+class TresholdsGovernor
+{
 
-//dependencies
+    //dependencies
     /** @var \Metaclass\TresholdsGovernor\Manager\RequestCountsManagerInterface $requestCountsManager does the actual storage and summation of RequestCounts */
     public $requestCountsManager;
 
@@ -27,16 +28,16 @@ class TresholdsGovernor {
     public $releasesManager;
 
     /** @var string $dtString holding the current date and time in format Y-m-d H:i:s */
-    public $dtString; 
+    public $dtString;
     
 //config with defaults
     /** var int $counterDurationInSeconds how many seconds each counter counts. */
-    public $counterDurationInSeconds = 180; 
+    public $counterDurationInSeconds = 180;
     
     /** @var string $blockUsernamesFor The duration for which failed login counters are summed per username. Format as DateTime offset */
     public $blockUsernamesFor = '25 minutes';
     
-    /** @var int The number of failed login attempts that are allowed per username within the $blockUsernamesFor duration. */ 
+    /** @var int The number of failed login attempts that are allowed per username within the $blockUsernamesFor duration. */
     public $limitPerUserName = 3;
     
     /** @var string $blockIpAddressesFor The duration for which failed login counters are summed per ip addess. Format as DateTime offset */
@@ -44,15 +45,15 @@ class TresholdsGovernor {
 
     /** @var int $limitBasePerIpAddress The number of failed login attempts that are allowed per IP address within the $blockIpAddressesFor duration. */
     public $limitBasePerIpAddress = 10; //limit may be higher, depending on successfull logins and requests (NYI)
-    
+
     /** @var string $allowReleasedUserOnAddressFor For how long a username will remain released per IP address. 
      * Format as DateTime offset. If empty feature is switched off. */
-    public $allowReleasedUserOnAddressFor = '30 days'; 
+    public $allowReleasedUserOnAddressFor = '30 days';
     
     /** @var string $allowReleasedUserByCookieFor For how long a username will remain released per IP address. 
      * Format as DateTime offset. If empty feature is switched off. 
      * Currently AuthenticationGuard does not provide cookietokens. */
-    public $allowReleasedUserByCookieFor = ''; 
+    public $allowReleasedUserByCookieFor = '';
     
     /** @var boolean $releaseUserOnLoginSuccess Wheather each time the user logs in sucessfully, the username is released for all ip addresses and user agents. */
     public $releaseUserOnLoginSuccess = false;
@@ -72,7 +73,7 @@ class TresholdsGovernor {
     /** @var float microtime of init */
     protected $initMicrotime;
 
-    /** @var string $ipAddress IP Address sending the request that is being processed */ 
+    /** @var string $ipAddress IP Address sending the request that is being processed */
     protected $ipAddress;
     
     /** @var string $username username from the request that is being processed */
@@ -106,7 +107,8 @@ class TresholdsGovernor {
      *     This parameter should be left null if separate RequestCountsManager and ReleasesManager will be set to the corresponding public properties.
      * @throws \ReflectionException if property with the name of a key does not exist or is not public
      */
-    public function __construct($params, $dataManager=null) {
+    public function __construct($params, $dataManager=null)
+    {
         $this->requestCountsManager = $dataManager;
         $this->releasesManager =  $dataManager;
         $this->dtString = date('Y-m-d H:i:s');
@@ -119,8 +121,7 @@ class TresholdsGovernor {
     protected function setPropertiesFromParams($params)
     {
         $rClass = new \ReflectionClass($this);
-        forEach($params as $key => $value)
-        {
+        foreach ($params as $key => $value) {
             $rProp = $rClass->getProperty($key);
             if (!$rProp->isPublic()) {
                 throw new \ReflectionException("Property must be public: '$key'");
@@ -137,14 +138,14 @@ class TresholdsGovernor {
      * @param string $password not used
      * @param string $cookieToken token from the cookie from  the request that is being processed
      */
-    public function initFor($ipAddress, $username, $password, $cookieToken) 
+    public function initFor($ipAddress, $username, $password, $cookieToken)
     {
         $this->initMicrotime = microtime(true);
 
         //cast to string because null is used for control in some Gateway functions
         $this->ipAddress = (string) $ipAddress;
         $this->username = (string) $username;
-        $this->cookieToken = (string) $cookieToken; 
+        $this->cookieToken = (string) $cookieToken;
         //$this->password = (string) $password;
 
         $timeLimit = new \DateTime("$this->dtString - $this->blockIpAddressesFor");
@@ -175,7 +176,7 @@ class TresholdsGovernor {
      * @return  \Metaclass\TresholdsGovernor\Result\Rejection or null if the governor does not require the login to be blocked.
      *   (Blocking may still take place for reasons external to this governor)
      */
-    public function checkAuthentication($justFailed=false) 
+    public function checkAuthentication($justFailed=false)
     {
         if ($justFailed) { // failure, but not yet registered, add it here
             $this->failureCountForUserName++;
@@ -186,10 +187,10 @@ class TresholdsGovernor {
         }
         $result = $this->decide();
 
-       if ($justFailed || $result) {
-           $this->registerAuthenticationFailure($result);
-       }
-       return $result;
+        if ($justFailed || $result) {
+            $this->registerAuthenticationFailure($result);
+        }
+        return $result;
     }
 
     /**
@@ -243,13 +244,13 @@ class TresholdsGovernor {
     {
         //? should we releaseUserNameForIpAddress? And shouldn't that have a shorter effect then release from e-mail?
         //? should we register (some) other failures in the session and release those here? 
-        
+
         $dateTime = $this->getRequestCountsDt($this->dtString);
         $this->requestCountsManager->insertOrIncrementSuccessCount($dateTime, $this->username, $this->ipAddress, $this->cookieToken);
 
         if ($this->releaseUserOnLoginSuccess) {
             $this->releaseUserName();
-        } 
+        }
         $this->releaseUserNameForIpAddressAndCookie();
     }
     
@@ -264,14 +265,14 @@ class TresholdsGovernor {
     
     /** Release the username from the current request.
      * Meant only to be combined with new password */
-    public function releaseUserName() 
+    public function releaseUserName()
     {
         $dateTime = new \DateTime($this->dtString);
         $timeLimit = new \DateTime("$this->dtString - $this->blockUsernamesFor");
         $this->requestCountsManager->releaseCountsForUserName($this->username, $dateTime, $timeLimit);
     }
     
-    /** Release the username from the request for the IP address sending the request and the token form the cookie that was sent with the request. */ 
+    /** Release the username from the request for the IP address sending the request and the token form the cookie that was sent with the request. */
     public function releaseUserNameForIpAddressAndCookie()
     {
         $dateTime = new \DateTime($this->dtString);
@@ -293,20 +294,20 @@ class TresholdsGovernor {
     }
 
     /** Delete RequestCounts and Releases that will no longer be used according to the current blocking resp release durations.
-     *  Packing RequestCounts into ones with longer durations has not yet been implemented. */ 
-    public function packData() 
+     *  Packing RequestCounts into ones with longer durations has not yet been implemented. */
+    public function packData()
     {
         $limit = new \DateTime("$this->dtString - $this->keepCountsFor");
         $this->requestCountsManager->deleteCountsUntil($limit);
         $result["requestcounts_deleted_until"] = $limit;
         //idea pack RequestCounts to lower granularity for period between both limits
-        
+
         if ($this->allowReleasedUserOnAddressFor) {
             $limit = min($limit, new \DateTime("$this->dtString - $this->allowReleasedUserOnAddressFor"));
         }
         if ($this->allowReleasedUserByCookieFor) {
             $limit = min($limit, new \DateTime("$this->dtString - $this->allowReleasedUserByCookieFor"));
-        }        
+        }
         $this->releasesManager->deleteReleasesUntil($limit);
         $result["releases_deleted_until"] = $limit;
 
@@ -371,5 +372,3 @@ class TresholdsGovernor {
         $this->sleepUntilSinceInit($this->fixedExecutionSeconds);
     }
 }
-
-?>

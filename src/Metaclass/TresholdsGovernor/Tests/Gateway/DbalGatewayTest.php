@@ -9,7 +9,8 @@ use \Doctrine\DBAL\DriverManager;
 /**
  * For testing RdbGateway with Doctrine DBAL
  */
-class DbalGatewayTest extends RdbGatewayTest {
+class DbalGatewayTest extends RdbGatewayTest
+{
 
     protected function makeConnection()
     {
@@ -18,6 +19,4 @@ class DbalGatewayTest extends RdbGatewayTest {
             'driver' => 'pdo_sqlite',
         ));
     }
-
-
 }

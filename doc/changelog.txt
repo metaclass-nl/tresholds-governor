@@ -176,4 +176,7 @@ AuthenticationGuardBundle Issue 9: cross framework library refactoring
 - FunctionalTest ::testCheckAuthenticationWithUserReleasedOnIpAddressAndCookie
     made compatible with PHP 5.3
 ------------------------------------
+#3 PSR-2
+- ran PHP Coding Standards Fixer (https://github.com/FriendsOfPhp/PHP-CS-Fixer)
+--------------------------------------
 #2DO: tag v0.3 (when finished solving issues)

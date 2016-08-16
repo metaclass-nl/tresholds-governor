@@ -41,5 +41,4 @@ interface ReleasesManagerInterface
      * @param \DateTime $limit
      */
     public function deleteReleasesUntil($limit);
-    
 }

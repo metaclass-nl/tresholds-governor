@@ -3,8 +3,8 @@
 
 namespace Metaclass\TresholdsGovernor\Tests\Mock;
 
-
-class RecordingWrapper {
+class RecordingWrapper
+{
 
     protected $wrapped;
     public $calls;
@@ -21,5 +21,4 @@ class RecordingWrapper {
         $this->calls[] = array($method, $arguments, $result);
         return $result;
     }
-
-} 
+}

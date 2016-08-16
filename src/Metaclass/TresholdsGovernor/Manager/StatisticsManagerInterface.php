@@ -16,13 +16,13 @@ interface StatisticsManagerInterface
      * @param \DateTime $timeLimit
      * @return int Total of `loginsFailed` counted with `dtFrom` after $timeLimit
      */
-    public function countLoginsFailed( \DateTime $timeLimit);
+    public function countLoginsFailed(\DateTime $timeLimit);
 
     /**
      * @param \DateTime $timeLimit
      * @return int Total of `loginsSucceeded` counted with `dtFrom` after $timeLimit
      */
-    public function countLoginsSucceeded( \DateTime $timeLimit);
+    public function countLoginsSucceeded(\DateTime $timeLimit);
 
     /**
      * @param $username

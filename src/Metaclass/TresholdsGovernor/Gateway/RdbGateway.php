@@ -1,32 +1,34 @@
 <?php 
 namespace Metaclass\TresholdsGovernor\Gateway;
 
-use Metaclass\Connection\PDOConnection;
+use Metaclass\TresholdsGovernor\Connection\PDOConnection;
 
-class RdbGateway {
+class RdbGateway
+{
     
     /**
-     * @var PDOConnection|Doctrine\DBAL\Connection $dbalConnection The database connection to use.
+     * @var PDOConnection|\Doctrine\DBAL\Connection $dbalConnection The database connection to use.
      */
     protected $connection;
     
     /**
-     * @param PDOConnection|Doctrine\DBAL\Connection $dbalConnection The database connection to use.
+     * @param PDOConnection|\Doctrine\DBAL\Connection $dbalConnection The database connection to use.
      */
-    public function __construct($dbalConnection) {
+    public function __construct($dbalConnection)
+    {
         $this->connection = $dbalConnection;
     }
     
     /**
-     * @return PDOConnection|Doctrine\DBAL\Connection
+     * @return PDOConnection|\Doctrine\DBAL\Connection
      */
-    protected function getConnection() 
+    protected function getConnection()
     {
         return $this->connection;
     }
 
 //----------------------------- RequestCountsGatewayInterface ------------------------------------
-    
+
     /**
      * @return int Total of $counterColumn counted for $ipAddress with dtFrom after $timeLimit
      * AND as far as specified username, ipAddress and cookieToken equal to specified.
@@ -89,7 +91,6 @@ class RdbGateway {
         } else {
             $this->createRequestCountsWith($dateTime, $ipAddress, $username, $cookieToken, $counter, $blockedCounterName);
         }
-        
     }
     
     /**
@@ -100,7 +101,8 @@ class RdbGateway {
      * @param string $ipAddress
      * @param string $cookieToken
      */
-    protected function getCountsIdWhereDateAndUsernameAndIpAddressAndCookie(\DateTime $dateTime, $username, $ipAddress, $cookieToken) {
+    protected function getCountsIdWhereDateAndUsernameAndIpAddressAndCookie(\DateTime $dateTime, $username, $ipAddress, $cookieToken)
+    {
         $sql = 'SELECT r.id FROM secu_requests r
     WHERE (r.username = :username)
     AND (r.ipAddress = :ipAddress)
@@ -184,9 +186,10 @@ class RdbGateway {
      * @param string $cookieToken
      * @throws BadFunctionCallException
      */
-    public function updateCountsColumnWhereColumnNullAfterSupplied($columnToUpdate, \DateTime $value, \DateTime $dtLimit, $username, $ipAddress, $cookieToken) {
+    public function updateCountsColumnWhereColumnNullAfterSupplied($columnToUpdate, \DateTime $value, \DateTime $dtLimit, $username, $ipAddress, $cookieToken)
+    {
         if ($username === null && $ipAddress == null) {
-            throw new \BadFunctionCallException ('At least one of username and ip address must be supplied');
+            throw new \BadFunctionCallException('At least one of username and ip address must be supplied');
         }
         $sql = "UPDATE secu_requests
     SET $columnToUpdate = :value
@@ -215,7 +218,7 @@ class RdbGateway {
      * Delete all RequestCounts with dtFrom before $dtLimit
      * @param \DateTime $dtLimit 
      */
-    public function deleteCountsUntil(\DateTime $dtLimit) 
+    public function deleteCountsUntil(\DateTime $dtLimit)
     {
         $sql = 'DELETE FROM secu_requests WHERE dtFrom < :dtLimit';
         $params = array('dtLimit' => $dtLimit->format('Y-m-d H:i:s'));
@@ -337,7 +340,7 @@ class RdbGateway {
         ";
 
         $conn = $this->getConnection();
-        $found = $conn->fetchAll( $sql, array($timeLimit->format('Y-m-d H:i:s'), $failureLimit) );
+        $found = $conn->fetchAll($sql, array($timeLimit->format('Y-m-d H:i:s'), $failureLimit));
         return isset($found['blocked']) ? $found['blocked'] : 0;
     }
 
@@ -376,7 +379,7 @@ class RdbGateway {
      * @param string $cookieToken
      * @return int id of the Release
      */
-    protected function getReleasesIdWhereDateAndUsernameAndIpAddressAndCookie($username, $ipAddress, $cookieToken) 
+    protected function getReleasesIdWhereDateAndUsernameAndIpAddressAndCookie($username, $ipAddress, $cookieToken)
     {
         $params = array(
                 'username' => $username,
@@ -459,7 +462,7 @@ class RdbGateway {
      * Delete all releases dated before $dtLimit
      * @param DateTime $dtLimit 
      */
-    public function deleteReleasesUntil(\DateTime $dtLimit) 
+    public function deleteReleasesUntil(\DateTime $dtLimit)
     {
         $sql = 'DELETE FROM secu_releases WHERE releasedAt < :dtLimit';
         $params = array('dtLimit' => $dtLimit->format('Y-m-d H:i:s'));
@@ -467,5 +470,3 @@ class RdbGateway {
         $this->getConnection()->executeQuery($sql, $params);
     }
 }
-
-?>

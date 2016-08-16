@@ -18,7 +18,7 @@ use Metaclass\TresholdsGovernor\Connection\PDOConnection;
 
 class FunctionalTest extends \PHPUnit_Framework_TestCase
 {
-    STATIC $connection;
+    public static $connection;
 
     /**
      * @var TresholdsGovernor
@@ -30,9 +30,9 @@ class FunctionalTest extends \PHPUnit_Framework_TestCase
      */
     protected $statisticsManager;
 
-    function setup()
+    public function setup()
     {
-        if (!isSet(self::$connection)) {
+        if (!isset(self::$connection)) {
             $pdo = new PDO('sqlite::memory:');
             self::$connection = new PDOConnection($pdo);
 
@@ -46,9 +46,9 @@ class FunctionalTest extends \PHPUnit_Framework_TestCase
 
         $this->governor->dtString = '1980-07-01 00:00:00';
         $this->governor->counterDurationInSeconds = 300; //5 minutes
-        $this->governor->blockUsernamesFor = '30 days'; 
+        $this->governor->blockUsernamesFor = '30 days';
         $this->governor->blockIpAddressesFor = '30 days'; //not very realistic, but should still work
-        $this->governor->allowReleasedUserOnAddressFor = '30 days'; 
+        $this->governor->allowReleasedUserOnAddressFor = '30 days';
         $this->governor->allowReleasedUserByCookieFor =  '10 days';
     }
 
@@ -61,14 +61,14 @@ class FunctionalTest extends \PHPUnit_Framework_TestCase
     }
 
     
-    function testSetup()
+    public function testSetup()
     {
         $dt = new \DateTime($this->governor->dtString);
         $this->assertEquals('1980-07-01 00:00:00', $dt->format('Y-m-d H:i:s'), 'DateTime is properly constructed');
     }
     
     /** test that the request counts dtFrom will be set floored to 5 minutes, as setup has configured $this->governor */
-    function testGetRequestCountsDt()
+    public function testGetRequestCountsDt()
     {
         $this->assertEquals('1980-07-01 00:00:00', $this->governor->getRequestCountsDt('1980-07-01 00:00:00')->format('Y-m-d H:i:s'));
         $this->assertEquals('1980-07-01 00:00:00', $this->governor->getRequestCountsDt('1980-07-01 00:00:01')->format('Y-m-d H:i:s'));
@@ -76,7 +76,7 @@ class FunctionalTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('1980-07-01 00:05:00', $this->governor->getRequestCountsDt('1980-07-01 00:05:00')->format('Y-m-d H:i:s'));
     }
     
-    function testInitFor() 
+    public function testInitFor()
     {
         $this->governor->initFor('192.168.255.255', 'testuser1', 'whattheheck', 'cookieToken1');
         $this->assertEquals(0, $this->get('failureCountForIpAddress'), 'failure count for ip address');
@@ -85,7 +85,7 @@ class FunctionalTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(0, $this->get('failureCountForUserByCookie'), 'failure count for username by cookie');
     }
     
-    function testRegisterAuthenticationFailure() 
+    public function testRegisterAuthenticationFailure()
     {
         $this->governor->initFor('192.168.255.255', 'testuser1', 'whattheheck', 'cookieToken1');
         $this->governor->registerAuthenticationFailure();
@@ -113,7 +113,7 @@ class FunctionalTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(1, $this->get('failureCountForIpAddress'), 'failure count by ip address');
         $this->assertEquals(1, $this->get('failureCountForUserName'), 'failure count by username');
         $this->assertEquals(1, $this->get('failureCountForUserOnAddress'), 'failure count for username on address');
-        $this->assertEquals(0, $this->get('failureCountForUserByCookie'), 'failure count for username by other cookie');        
+        $this->assertEquals(0, $this->get('failureCountForUserByCookie'), 'failure count for username by other cookie');
         $this->assertFalse($this->get('isUserReleasedOnAddress'), 'is user released on address');
         $this->assertFalse($this->get('isUserReleasedByCookie'), 'is user released on other cookie');
 
@@ -131,7 +131,7 @@ class FunctionalTest extends \PHPUnit_Framework_TestCase
     }
 
     // Feature Not used
-    function checkAuthenticationJustFailed()
+    public function checkAuthenticationJustFailed()
     {
         $this->governor->limitPerUserName = 3;
         $this->governor->limitBasePerIpAddress = 3;
@@ -141,19 +141,19 @@ class FunctionalTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(1, $this->get('failureCountForUserOnAddress'), 'failure count for username on address');
         $this->assertEquals(1, $this->get('failureCountForUserByCookie'), 'failure count for username by cookie');
         
-        $this->assertNull($this->governor->checkAuthentication(true)); 
+        $this->assertNull($this->governor->checkAuthentication(true));
         $this->assertEquals(2, $this->get('failureCountForIpAddress'), 'failure count for ip address');
         $this->assertEquals(2, $this->get('failureCountForUserName'), 'failure count for username');
         $this->assertEquals(2, $this->get('failureCountForUserOnAddress'), 'failure count for username on address');
         $this->assertEquals(2, $this->get('failureCountForUserByCookie'), 'failure count for username by cookie');
     }
     
-    function testCheckAuthenticationUnreleased() 
+    public function testCheckAuthenticationUnreleased()
     {
         $this->governor->limitPerUserName = 3;
         $this->governor->limitBasePerIpAddress = 2;
         $this->governor->initFor('192.168.255.255', 'testuser1', 'whattheheck', 'cookieToken1');
-        $this->assertNull($this->governor->checkAuthentication()); 
+        $this->assertNull($this->governor->checkAuthentication());
 
         $this->governor->limitBasePerIpAddress = 1;
         $result = $this->governor->checkAuthentication(); //registers authentication failure, but that only shows up when $this->governor->initFor
@@ -164,7 +164,7 @@ class FunctionalTest extends \PHPUnit_Framework_TestCase
         
         $this->governor->limitPerUserName = 2;
         $this->governor->limitBasePerIpAddress = 3;
-        $this->assertNull($this->governor->checkAuthentication(), 'result'); 
+        $this->assertNull($this->governor->checkAuthentication(), 'result');
         
         
         $this->governor->limitPerUserName = 1;
@@ -185,7 +185,7 @@ class FunctionalTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(0, $counts[0]['usernameBlockedForCookie'], '192.168.255.255 usernameBlockedForCookie');
     }
     
-    function testRegisterAuthenticationSuccess() 
+    public function testRegisterAuthenticationSuccess()
     {
         $this->governor->initFor('192.168.255.255', 'testuser1', 'whattheheck', 'cookieToken1');
         $this->governor->registerAuthenticationSuccess();
@@ -218,7 +218,7 @@ class FunctionalTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(3, $this->get('failureCountForIpAddress'), 'failure count by ip address');
         $this->assertEquals(3, $this->get('failureCountForUserName'), 'failure count by username, other cookieToken');
         $this->assertEquals(0, $this->get('failureCountForUserOnAddress'), 'failure count for username on address, other cookieToken');
-        $this->assertEquals(0, $this->get('failureCountForUserByCookie'), 'failure count for username by other cookie');        
+        $this->assertEquals(0, $this->get('failureCountForUserByCookie'), 'failure count for username by other cookie');
         $this->assertTrue($this->get('isUserReleasedOnAddress'), 'is user released on address');
         $this->assertFalse($this->get('isUserReleasedByCookie'), 'is user released on by cookie');
         
@@ -226,12 +226,12 @@ class FunctionalTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(0, $this->get('failureCountForIpAddress'), 'failure count by other ip address');
         $this->assertEquals(3, $this->get('failureCountForUserName'), 'failure count by username, other addres and other cookieToken');
         $this->assertEquals(0, $this->get('failureCountForUserOnAddress'), 'failure count for username on other address, other cookieToken');
-        $this->assertEquals(0, $this->get('failureCountForUserByCookie'), 'failure count for username by other cookie, other address');        
+        $this->assertEquals(0, $this->get('failureCountForUserByCookie'), 'failure count for username by other cookie, other address');
         $this->assertFalse($this->get('isUserReleasedOnAddress'), 'is user released on other address');
         $this->assertFalse($this->get('isUserReleasedByCookie'), 'is user released on by cookie');
     }
     
-    function testRegisterAuthenticationFailureAfterSuccess() 
+    public function testRegisterAuthenticationFailureAfterSuccess()
     {
         $this->governor->initFor('192.168.255.255', 'testuser1', 'whattheheck', 'cookieToken1');
         $this->governor->registerAuthenticationFailure();
@@ -256,15 +256,15 @@ class FunctionalTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(4, $this->get('failureCountForIpAddress'), 'failure count by ip address');
         $this->assertEquals(4, $this->get('failureCountForUserName'), 'failure count by username');
         $this->assertEquals(1, $this->get('failureCountForUserOnAddress'), 'failure count for username on address');
-        $this->assertEquals(0, $this->get('failureCountForUserByCookie'), 'failure count for username by other cookie');        
+        $this->assertEquals(0, $this->get('failureCountForUserByCookie'), 'failure count for username by other cookie');
         $this->assertTrue($this->get('isUserReleasedOnAddress'), 'is user released on address');
         $this->assertFalse($this->get('isUserReleasedByCookie'), 'is user released by other cookie');
     }
     
-    function testCheckAuthenticationWithUserReleasedOnIpAddressAndCookie() 
+    public function testCheckAuthenticationWithUserReleasedOnIpAddressAndCookie()
     {
         $this->governor->dtString = '1980-07-01 00:05:00'; //5 minutes later
-        
+
         $this->governor->limitPerUserName = 2;
         $this->governor->limitBasePerIpAddress = 5;
         $this->governor->initFor('192.168.255.255', 'testuser1', 'whattheheck', 'cookieToken1');
@@ -275,14 +275,14 @@ class FunctionalTest extends \PHPUnit_Framework_TestCase
     
         $this->governor->initFor('192.168.255.254', 'testuser1', 'whattheheck', 'cookieToken1');
         $this->assertNull($this->governor->checkAuthentication()); //assert no Rejection because of cookieToken released
-    
+
         $this->governor->initFor('192.168.255.255', 'testuser1', 'whattheheck', 'cookieToken2');
         $this->assertNull($this->governor->checkAuthentication()); //assert no Rejection because of ip address released
-    
+
         $this->governor->limitPerUserName = 5;
         $this->governor->initFor('192.168.255.254', 'testuser1', 'whattheheck', 'cookieToken2');
         $this->assertNull($this->governor->checkAuthentication()); //assert no Rejection on other ip address
-    
+
         $this->governor->limitBasePerIpAddress = 4;
         $this->governor->limitPerUserName = 2;
         $this->governor->initFor('192.168.255.255', 'testuser2', 'whattheheck', 'cookieToken1');
@@ -294,10 +294,10 @@ class FunctionalTest extends \PHPUnit_Framework_TestCase
 
         $this->governor->initFor('192.168.255.254', 'testuser1', 'whattheheck', 'cookieToken1');
         $this->assertNull($this->governor->checkAuthentication()); //assert no Rejection because of cookieToken released
-        
+
         $this->governor->initFor('192.168.255.255', 'testuser1', 'whattheheck', 'cookieToken2');
         $this->assertNull($this->governor->checkAuthentication()); //assert no Rejection because of ip address released
-        
+
         $this->governor->limitPerUserName = 0;
         $result = $this->governor->checkAuthentication(); //registers authentication failure on cookieToken2 and ip 255
         $this->assertNotNull($result, 'result');
@@ -322,20 +322,20 @@ class FunctionalTest extends \PHPUnit_Framework_TestCase
         $counts = $this->statisticsManager->countsByAddressBetween('192.168.255.255', $from, $until);
         $this->assertEquals(2, count($counts), '192.168.255.255 counter2');
 
-        $countsTestuser1 = array_filter($counts, function($e) {
+        $countsTestuser1 = array_filter($counts, function ($e) {
             return $e['username'] == 'testuser1';
         });
-        $this->assertEquals(1, count($countsTestuser1) , '192.168.255.255 testuser1');
+        $this->assertEquals(1, count($countsTestuser1), '192.168.255.255 testuser1');
         $testuser1 = current($countsTestuser1);
         $this->assertEquals(0, $testuser1['ipAddressBlocked'], '192.168.255.255 ipAddressBlocked');
         $this->assertEquals(0, $testuser1['usernameBlocked'], '192.168.255.255 usernameBlocked');
         $this->assertEquals(1, $testuser1['usernameBlockedForIpAddress'], '192.168.255.255 usernameBlockedForIpAddress');
         $this->assertEquals(0, $testuser1['usernameBlockedForCookie'], '192.168.255.255 usernameBlockedForCookie');
 
-        $countsTestuser2 = array_filter($counts, function($e) {
+        $countsTestuser2 = array_filter($counts, function ($e) {
             return $e['username'] == 'testuser2';
         });
-        $this->assertEquals(1, count($countsTestuser2) , '192.168.255.255 testuser2');
+        $this->assertEquals(1, count($countsTestuser2), '192.168.255.255 testuser2');
         $testuser2 = current($countsTestuser2);
         $this->assertEquals(1, $testuser2['ipAddressBlocked'], '192.168.255.255 ipAddressBlocked');
         $this->assertEquals(0, $testuser2['usernameBlocked'], '192.168.255.255 usernameBlocked');
@@ -343,7 +343,7 @@ class FunctionalTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(0, $testuser2['usernameBlockedForCookie'], '192.168.255.255 usernameBlockedForCookie');
     }
     
-    function testBlockingDurations() 
+    public function testBlockingDurations()
     {
         $this->governor->initFor('192.168.255.255', 'testuser1', 'whattheheck', 'cookieToken1');
         $this->assertEquals(6, $this->get('failureCountForIpAddress'), 'failure count by ip address');
@@ -354,7 +354,7 @@ class FunctionalTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue($this->get('isUserReleasedByCookie'), 'is user released by cookie');
         
         $this->governor->dtString = '1980-07-10 23:59:59';  //just less then 10 days after first request
-        
+
         $this->governor->blockUsernamesFor = '10 days';
         
         $this->governor->initFor('192.168.255.255', 'testuser1', 'whattheheck', 'cookieToken1');
@@ -381,13 +381,12 @@ class FunctionalTest extends \PHPUnit_Framework_TestCase
         $this->governor->blockIpAddressesFor = '863995 seconds'; //5 seconds less then 10 days
         $this->governor->initFor('192.168.255.255', 'testuser1', 'whattheheck', 'cookieToken1');
         $this->assertEquals(2, $this->get('failureCountForIpAddress'), 'failure count by ip address');
-        
     }
 
-    function testReleaseDurations() 
+    public function testReleaseDurations()
     {
         $this->governor->dtString = '1980-07-11 00:00:00'; //10 days after first request and releases
-        
+
         $this->governor->allowReleasedUserOnAddressFor = '10 days';
         $this->governor->allowReleasedUserByCookieFor = '10 days';
         $this->governor->initFor('192.168.255.255', 'testuser1', 'whattheheck', 'cookieToken1');
@@ -410,10 +409,9 @@ class FunctionalTest extends \PHPUnit_Framework_TestCase
         //should not be influenced:
         $this->assertEquals(2, $this->get('failureCountForUserOnAddress'), 'failure count for username on address');
         $this->assertEquals(2, $this->get('failureCountForUserByCookie'), 'failure count for username by cookie');
-        
     }
     
-    function testDeleteData1() 
+    public function testDeleteData1()
     {
         $this->get('requestCountsManager')->deleteCountsUntil(new \DateTime('1981-01-01'));
         $this->get('releasesManager')->deleteReleasesUntil(new \DateTime('1981-01-01'));
@@ -428,7 +426,8 @@ class FunctionalTest extends \PHPUnit_Framework_TestCase
         $this->assertFalse($this->get('isUserReleasedByCookie'), 'is user released by cookie');
     }
 
-    function testRegisterAuthenticationSuccessReleasingUser() {
+    public function testRegisterAuthenticationSuccessReleasingUser()
+    {
         $this->governor->initFor('192.168.255.255', 'testuser1', 'whattheheck', 'cookieToken1');
         $this->governor->releaseUserOnLoginSuccess = true;
         $this->governor->registerAuthenticationFailure();
@@ -473,9 +472,9 @@ class FunctionalTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(0, $this->get('failureCountForUserByCookie'), 'failure count for username by other cookie, other address');
         $this->assertFalse($this->get('isUserReleasedOnAddress'), 'is user released on other address');
         $this->assertFalse($this->get('isUserReleasedByCookie'), 'is user released by other cookie');
-    }        
+    }
     
-    function testCheckAuthenticationWithUserReleased() 
+    public function testCheckAuthenticationWithUserReleased()
     {
         $this->governor->limitPerUserName = 1;
         $this->governor->limitBasePerIpAddress = 1;
@@ -487,15 +486,15 @@ class FunctionalTest extends \PHPUnit_Framework_TestCase
 
         $this->governor->initFor('192.168.255.254', 'testuser1', 'whattheheck', 'cookieToken1');
         $this->assertNull($this->governor->checkAuthentication()); //assert no Rejection because of cookieToken released
-        
+
         $this->governor->initFor('192.168.255.255', 'testuser1', 'whattheheck', 'cookieToken2');
         $this->assertNull($this->governor->checkAuthentication()); //assert no Rejection because of ip address released
-        
+
         $this->governor->limitBasePerIpAddress = 1;
         $this->governor->limitPerUserName = 1;
         $this->governor->initFor('192.168.255.254', 'testuser1', 'whattheheck', 'cookieToken2');
         $this->assertNull($this->governor->checkAuthentication()); //assert no Rejection because user released
-        
+
         $this->governor->limitBasePerIpAddress = 0;
         $this->governor->initFor('192.168.255.255', 'testuser2', 'whattheheck', 'cookieToken1');
         $result = $this->governor->checkAuthentication(); //registers authentication failure for testuser2
@@ -505,7 +504,7 @@ class FunctionalTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(array('%ipAddress%' => '192.168.255.255'), $result->parameters);
     }
         
-    function testDeleteData2() 
+    public function testDeleteData2()
     {
         $this->get('requestCountsManager')->deleteCountsUntil(new \DateTime('1981-01-01'));
         $this->get('releasesManager')->deleteReleasesUntil(new \DateTime('1981-01-01'));
@@ -519,7 +518,4 @@ class FunctionalTest extends \PHPUnit_Framework_TestCase
         $this->assertFalse($this->get('isUserReleasedOnAddress'), 'is user released on address');
         $this->assertFalse($this->get('isUserReleasedByCookie'), 'is user released by cookie');
     }
-
-
 }
-?>

@@ -14,5 +14,4 @@ class PDOException extends \PDOException
         $this->code      = $sqlState;
         $this->errorInfo = $errorInfo;
     }
-
 }

@@ -1,7 +1,7 @@
 <?php 
 namespace Metaclass\TresholdsGovernor\Tests\Mock;
 
-class MockGateway 
+class MockGateway
 {
     public $deleteReleasesLimit;
     public $deleteCountsLimit;
@@ -16,4 +16,3 @@ class MockGateway
         $this->deleteCountsLimit = $dtLimit;
     }
 }
-?>

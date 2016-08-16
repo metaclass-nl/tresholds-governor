@@ -103,5 +103,4 @@ interface RequestCountsManagerInterface
      * @param \DateTime $limit 
      */
     public function deleteCountsUntil(\DateTime $limit);
-        
 }

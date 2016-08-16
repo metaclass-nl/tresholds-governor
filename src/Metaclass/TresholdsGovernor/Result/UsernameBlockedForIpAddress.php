@@ -9,9 +9,9 @@ namespace Metaclass\TresholdsGovernor\Result;
  * @copyright MetaClass Groningen 2014
  */
  class UsernameBlockedForIpAddress extends Rejection
-{
+ {
      public function getCounterName()
      {
          return 'usernameBlockedForIpAddress';
      }
-}
+ }

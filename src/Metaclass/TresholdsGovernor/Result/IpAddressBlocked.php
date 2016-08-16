@@ -15,4 +15,3 @@ class IpAddressBlocked extends Rejection
         return 'ipAddressBlocked';
     }
 }
-?>

@@ -27,4 +27,3 @@ abstract class Rejection
      * */
     abstract public function getCounterName();
 }
-?>
