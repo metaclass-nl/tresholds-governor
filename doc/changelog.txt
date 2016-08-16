@@ -178,5 +178,6 @@ AuthenticationGuardBundle Issue 9: cross framework library refactoring
 ------------------------------------
 #3 PSR-2
 - ran PHP Coding Standards Fixer (https://github.com/FriendsOfPhp/PHP-CS-Fixer)
+tagged v0.3
 --------------------------------------
-#2DO: tag v0.3 (when finished solving issues)
+
