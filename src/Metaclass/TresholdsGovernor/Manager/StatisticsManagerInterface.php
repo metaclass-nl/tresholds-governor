@@ -33,7 +33,7 @@ interface StatisticsManagerInterface
     public function countLoginsSucceededForUserName($username, \DateTime $timeLimit);
 
     /** @see RequestCountsManagerInterface::countLoginsFailedForUserName */
-    public function countLoginsFailedForUserName($username, \DateTime $timeLimit);
+//    public function countLoginsFailedForUserName($username, \DateTime $timeLimit);
 
     /** Counts grouped by Ip address
      * with `dtFrom` after $limitFrom AND as far as specified
