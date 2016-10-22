@@ -180,4 +180,7 @@ AuthenticationGuardBundle Issue 9: cross framework library refactoring
 - ran PHP Coding Standards Fixer (https://github.com/FriendsOfPhp/PHP-CS-Fixer)
 tagged v0.3
 --------------------------------------
-
+#5 api docs for statistics functions
+- function countLoginsFailedForUserName in two interfaces gave problems with php 5.3,
+removed it from StatisticsManagerInterface
+------------------------------------------
