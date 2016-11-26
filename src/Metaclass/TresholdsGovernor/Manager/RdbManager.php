@@ -123,6 +123,12 @@ class RdbManager implements ReleasesManagerInterface,  RequestCountsManagerInter
     }
 
     /** {@inheritdoc} */
+    public function countsGroupedByUsername(\DateTime $limitFrom, \DateTime $limitUntil=null, $ipAddress=null)
+    {
+        return $this->gateway->countsGroupedByUsername($limitFrom, $limitUntil, $ipAddress);
+    }
+
+    /** {@inheritdoc} */
     public function countsByUsernameBetween($username, \DateTime $limitFrom, \DateTime $limitUntil)
     {
         return $this->gateway->countsBetween($limitFrom, $limitUntil, $username);

@@ -230,7 +230,7 @@ class RdbGateway
     /** Selects counts grouped by `ipAdress`
      * with `dtFrom` after or equal to $limitFrom AND as far as specified
      * `dtFrom` before $limitUntil, `username` equals specified,
-     * in ascenting order of `ipAdress`
+     * in ascending order of `ipAdress`
      * Counts are:
      *   count(distinct(r.username)) as usernames,
      *   sum(r.loginsSucceeded) as loginsSucceeded,
@@ -268,6 +268,51 @@ class RdbGateway
         $sql .= "
             GROUP BY r.ipAddress
             ORDER BY r.ipAddress
+            LIMIT 200";
+
+        $stmt = $this->getConnection()->executeQuery($sql, $params);
+        $result = $stmt->fetchAll();
+        $stmt->closeCursor();
+
+        return $result;
+    }
+
+    /** Selects counts grouped by `username`
+     * with `dtFrom` after or equal to $limitFrom AND as far as specified
+     * `dtFrom` before $limitUntil, `username` equals specified,
+     * in ascending order of `username`
+     * Counts are:
+     *   count(distinct(r.ipAddress)) as ipAddresses,
+     *   further @see ::countsGroupedByIpAddress
+     * @param \DateTime $limitFrom
+     * @param \DateTime|null $limitUntil
+     * @param string|null $ipAddress
+     * @return array of array each with username address and its counts
+     */
+    public function countsGroupedByUsername(\DateTime $limitFrom, \DateTime $limitUntil=null, $ipAddress=null)
+    {
+        $params = array($limitFrom->format('Y-m-d H:i:s'));
+        $sql = "SELECT r.username
+          , count(distinct(r.ipAddress)) as ipAddresses
+          , sum(r.loginsSucceeded) as loginsSucceeded
+          , sum(r.loginsFailed) as loginsFailed
+          , sum(r.ipAddressBlocked) as ipAddressBlocked
+          , sum(r.usernameBlocked) as usernameBlocked
+          , sum(r.usernameBlockedForIpAddress) as usernameBlockedForIpAddress
+          , sum(r.usernameBlockedForCookie) as usernameBlockedForCookie
+            FROM secu_requests r
+            WHERE (r.dtFrom >= ?) AND (r.userReleasedAt IS NULL)";
+        if ($limitUntil !== null) {
+            $sql .= " AND (r.dtFrom < ?)";
+            $params[] = $limitUntil->format('Y-m-d H:i:s');
+        }
+        if ($ipAddress !== null) {
+            $sql .= " AND (r.ipAddress = ?)";
+            $params[] = $ipAddress;
+        }
+        $sql .= "
+            GROUP BY r.username
+            ORDER BY r.username
             LIMIT 200";
 
         $stmt = $this->getConnection()->executeQuery($sql, $params);

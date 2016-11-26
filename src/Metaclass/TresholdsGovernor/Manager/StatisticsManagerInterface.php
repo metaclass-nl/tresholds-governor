@@ -53,6 +53,21 @@ interface StatisticsManagerInterface
      */
     public function countsGroupedByIpAddress(\DateTime $limitFrom, \DateTime $limitUntil=null, $username=null);
 
+    /** Selects counts grouped by `username`
+     * with `dtFrom` after or equal to $limitFrom AND as far as specified
+     * `dtFrom` before $limitUntil, `username` equals specified,
+     * in ascending order of `username`
+     * Counts are:
+     *   count(distinct(r.ipAddress)) as ipAddresses,
+     *   further @see ::countsGroupedByIpAddress
+     * @param \DateTime $limitFrom
+     * @param \DateTime|null $limitUntil
+     * @param string|null $ipAddress
+     * @return array of array each with username address and its counts
+     */
+    public function countsGroupedByUsername(\DateTime $limitFrom, \DateTime $limitUntil=null, $ipAddress=null);
+
+
     /** Selects Counts
      * with `dtFrom` after or erual to $limitFrom AND before $limitUntil,
      * and `username` equals specified,
