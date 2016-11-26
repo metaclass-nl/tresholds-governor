@@ -70,15 +70,17 @@ From your own application:
 
 	```php
     use Metaclass\TresholdsGovernor\Service\TresholdsGovernor;
+    use Metaclass\TresholdsGovernor\Manager\RdbManager;
     use Metaclass\TresholdsGovernor\Gateway\RdbGateway;
     use Metaclass\TresholdsGovernor\Connection\PDOConnection; // not necessary if you use DBAL
 
     //initialize your Doctrine\DBAL\Connection or PDO
     // if using PDO directy: $connection = new PDOConnection($pdo);
 
-    $dbalGateway = new RdbGateway($connection);
+    $gateway = new RdbGateway($connection);
+    $manager = new RdbManager($gateway);
     //parameters see step 6
-    $governor = new TresholdsGovernor($parameters, $dbalGateway);
+    $governor = new TresholdsGovernor($parameters, $manager);
     //alternatively you may set separate gateways for RequestCounts to $governor->requestCountsGateway
     //and for Releases to $governor->releasesGateway
 
@@ -89,6 +91,12 @@ From your own application:
         //block authentication.
     } else {
         //attempt to authenticate user
+
+        // if authentication succeeded
+        $governor->registerAuthenticationSuccess();
+
+        // else
+        $governor->registerAuthenticationFailure()
     }
 	```
 
@@ -97,13 +105,15 @@ From your own application:
     ```php
     use Metaclass\TresholdsGovernor\Service\TresholdsGovernor;
     use Metaclass\TresholdsGovernor\Gateway\RdbGateway;
+    use Metaclass\TresholdsGovernor\Manager\RdbManager;
 
     //initialize your Doctrine\DBAL\Connection or PDO
     // if using PDO directy: $connection = new PDOConnection($pdo);
 
-    $dbalGateway = new RdbGateway($connection);
+    $gateway = new RdbGateway($connection);
+    $manager = new RdbManager($gateway);
     //parameters see step 6
-    $governor = new TresholdsGovernor($parameters, $dbalGateway);
+    $governor = new TresholdsGovernor($parameters, $manager);
     $governor->packData();
     ```
 
