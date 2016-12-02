@@ -120,7 +120,7 @@ AuthenticationGuardBundle Issue 14: Symfony / Doctrine Compatibility
 committed, published
 -------------------------------------------
 - .gitignore added .idea
-comitted
+committed
 ---------------------------------
 Merge pull request #7 from stof/patch-1
 - Use a bound composer constraint
@@ -184,3 +184,11 @@ tagged v0.3
 - function countLoginsFailedForUserName in two interfaces gave problems with php 5.3,
 removed it from StatisticsManagerInterface
 ------------------------------------------
+Added StatisticsManagerInterface::countsGroupedByUsername and its implementation
+- RdbGateway
+- RdbManager
+- StatisticsManagerInterface
+-----------------------------------------
+Corrected documentation
+pushed to github, published
+-------------------------------------
