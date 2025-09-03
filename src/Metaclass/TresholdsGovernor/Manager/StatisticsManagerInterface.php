@@ -51,7 +51,7 @@ interface StatisticsManagerInterface
      * @param string|null $username
      * @return array of array each with ip address and its counts
      */
-    public function countsGroupedByIpAddress(\DateTime $limitFrom, \DateTime $limitUntil=null, $username=null);
+    public function countsGroupedByIpAddress(\DateTime $limitFrom, ?\DateTime $limitUntil=null, $username=null);
 
     /** Selects counts grouped by `username`
      * with `dtFrom` after or equal to $limitFrom AND as far as specified
@@ -65,7 +65,7 @@ interface StatisticsManagerInterface
      * @param string|null $ipAddress
      * @return array of array each with username address and its counts
      */
-    public function countsGroupedByUsername(\DateTime $limitFrom, \DateTime $limitUntil=null, $ipAddress=null);
+    public function countsGroupedByUsername(\DateTime $limitFrom, ?\DateTime $limitUntil=null, $ipAddress=null);
 
 
     /** Selects Counts

@@ -30,7 +30,7 @@ FEATURES
 
 REQUIREMENTS
 ------------
-PHP >=5.3.3,
+PHP >=7.1,
 
 PDO or Doctrine DBAL ^2.3.4 or custom implementations of the Management interfaces.
 
@@ -66,7 +66,7 @@ http://www.metaclass.nl/site/index_php/Menu/10/Contact.html
 COPYRIGHT AND LICENCE
 ---------------------
 
-Unless notified otherwise Copyright (c) 2014 MetaClass Groningen 
+Unless notified otherwise Copyright (c) 2014 MetaClass Groningen. All rights reserved.
 
 This bundle is under the MIT license. See the complete license in the bundle:
 

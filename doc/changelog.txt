@@ -192,3 +192,8 @@ Added StatisticsManagerInterface::countsGroupedByUsername and its implementation
 Corrected documentation
 pushed to github, published
 -------------------------------------
+Minimal adaptations to PHP 8.4
+- No longer implicitly marks typed function parameters as nullable (deprecated)
+- Now requires PHP >= 7.1
+comitted 3-9-2025
+-------------------------------

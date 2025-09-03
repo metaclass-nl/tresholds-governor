@@ -244,7 +244,7 @@ class RdbGateway
      * @param string|null $username
      * @return array of array each with ip address and its counts
      */
-    public function countsGroupedByIpAddress(\DateTime $limitFrom, \DateTime $limitUntil=null, $username=null)
+    public function countsGroupedByIpAddress(\DateTime $limitFrom, ?\DateTime $limitUntil=null, $username=null)
     {
         $params = array($limitFrom->format('Y-m-d H:i:s'));
         $sql = "SELECT r.ipAddress
@@ -289,7 +289,7 @@ class RdbGateway
      * @param string|null $ipAddress
      * @return array of array each with username address and its counts
      */
-    public function countsGroupedByUsername(\DateTime $limitFrom, \DateTime $limitUntil=null, $ipAddress=null)
+    public function countsGroupedByUsername(\DateTime $limitFrom, ?\DateTime $limitUntil=null, $ipAddress=null)
     {
         $params = array($limitFrom->format('Y-m-d H:i:s'));
         $sql = "SELECT r.username

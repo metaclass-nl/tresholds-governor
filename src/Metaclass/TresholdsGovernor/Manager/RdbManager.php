@@ -57,7 +57,7 @@ class RdbManager implements ReleasesManagerInterface,  RequestCountsManagerInter
     }
     
     /** {@inheritdoc} */
-    public function insertOrIncrementFailureCount(\DateTime $dateTime, $username, $ipAddress, $cookieToken, Rejection $rejection=null)
+    public function insertOrIncrementFailureCount(\DateTime $dateTime, $username, $ipAddress, $cookieToken, ?Rejection $rejection=null)
     {
         $blockedCounterName = $rejection === null ? null : $rejection->getCounterName();
         $this->gateway->insertOrIncrementCount($dateTime, $username, $ipAddress, $cookieToken, false, $blockedCounterName);
@@ -117,13 +117,13 @@ class RdbManager implements ReleasesManagerInterface,  RequestCountsManagerInter
     }
 
     /** {@inheritdoc} */
-    public function countsGroupedByIpAddress(\DateTime $limitFrom, \DateTime $limitUntil=null, $username=null)
+    public function countsGroupedByIpAddress(\DateTime $limitFrom, ?\DateTime $limitUntil=null, $username=null)
     {
         return $this->gateway->countsGroupedByIpAddress($limitFrom, $limitUntil, $username);
     }
 
     /** {@inheritdoc} */
-    public function countsGroupedByUsername(\DateTime $limitFrom, \DateTime $limitUntil=null, $ipAddress=null)
+    public function countsGroupedByUsername(\DateTime $limitFrom, ?\DateTime $limitUntil=null, $ipAddress=null)
     {
         return $this->gateway->countsGroupedByUsername($limitFrom, $limitUntil, $ipAddress);
     }

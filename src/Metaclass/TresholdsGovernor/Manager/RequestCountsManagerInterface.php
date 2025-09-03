@@ -60,7 +60,7 @@ interface RequestCountsManagerInterface
      * @param string $cookieToken
      * @param \Metaclass\TresholdsGovernor\Result\Rejection $rejection or null if other kind of failure
      */
-    public function insertOrIncrementFailureCount(\DateTime $dateTime, $username, $ipAddress, $cookieToken, Rejection $rejection=null);
+    public function insertOrIncrementFailureCount(\DateTime $dateTime, $username, $ipAddress, $cookieToken, ?Rejection $rejection=null);
     
     /** Release the RequestCounts for $username with dtFrom after $timeLimit 
      * 

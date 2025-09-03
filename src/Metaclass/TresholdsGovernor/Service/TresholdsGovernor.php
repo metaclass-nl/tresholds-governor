@@ -255,8 +255,8 @@ class TresholdsGovernor
     }
     
     /** Register that the current login attempt has failed
-     * @param \Metaclass\TresholdsGovernor\Result\Rejection or null if other kind of failure */
-    public function registerAuthenticationFailure(Rejection $rejection=null)
+     * @param ?\Metaclass\TresholdsGovernor\Result\Rejection or null if other kind of failure */
+    public function registerAuthenticationFailure(?Rejection $rejection=null)
     {
         //SBAL/Query/QueryBuilder::execute does not provide QueryCacheProfile to the connection, so the query will not be cached
         $dateTime = $this->getRequestCountsDt($this->dtString);
